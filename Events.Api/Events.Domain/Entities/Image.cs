@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Events.Domain.Entities
+namespace Events.Domain.Entities;
+
+public class Image
 {
-    internal class Image
-    {
-    }
+    public Guid Id { get; set; }
+
+    public string Url { get; set; } = string.Empty;
 }

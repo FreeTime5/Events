@@ -1,15 +1,22 @@
+using Events.Application.Servicies.EventService.DTOs;
+using Events.Application.Servicies.EventService.Validators;
+using Events.Application.Servicies.Profiles;
+using FluentValidation;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddAutoMapper(typeof(ApplicationProfile));
+builder.Services.AddScoped<IValidator<CreateEventRequestDTO>, CreateEventRequestValidator>();
+builder.Services.AddScoped<IValidator<UpdateEventRequestDTO>, UpdateEventRequestValidator>();
+
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

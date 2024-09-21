@@ -4,9 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Events.Domain.Entities
+namespace Events.Domain.Entities;
+
+public class Registration
 {
-    internal class RegistrationInfo
-    {
-    }
+    public Member Member { get; set; }
+
+    public Event Event { get; set; }
+
+    public DateTime RegistrationDate { get; set; }
 }
