@@ -5,7 +5,6 @@ using Events.Application.Servicies.EventService.DTOs;
 using Events.Domain.Entities;
 using Events.Domain.Shared;
 using FluentValidation;
-using System.Diagnostics.Tracing;
 
 namespace Events.Application.Servicies.EventService;
 
@@ -16,9 +15,9 @@ public class EventService
     private readonly IValidator<CreateEventRequestDTO> _createEventValidator;
     private readonly IValidator<UpdateEventRequestDTO> _updateValidator;
 
-    public EventService(IEventRepo eventRepo, 
-        IMapper mapper, 
-        IValidator<CreateEventRequestDTO> createEventValidator, 
+    public EventService(IEventRepo eventRepo,
+        IMapper mapper,
+        IValidator<CreateEventRequestDTO> createEventValidator,
         IValidator<UpdateEventRequestDTO> updateValidator)
     {
         _eventRepo = eventRepo;
@@ -91,7 +90,7 @@ public class EventService
             case "title":
             case "date":
                 return Result.Success();
-                   
+
         }
         return Result.Failure([new Error("Incorrect sort item name", "", "sortItem")]);
     }

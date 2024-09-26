@@ -2,11 +2,6 @@
 using Events.Application.Models;
 using Events.Application.Servicies.MemberService.DTOs;
 using Events.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Events.Application.Servicies.MemberService;
 
@@ -19,7 +14,7 @@ public class MemberService
         _memberRepo = memberRepo;
     }
 
-    public async Task<List<Member>> GetMemberOfEvent (Event ev)
+    public async Task<List<User>> GetMemberOfEvent(Event ev)
     {
         var membersOfEvent = await _memberRepo.GetAllFromEvent(ev);
         return membersOfEvent;

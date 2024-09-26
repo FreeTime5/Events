@@ -2,7 +2,7 @@
 
 namespace Events.Application.Servicies.EventService.DTOs;
 
-public class UpdateEventRequestDTO 
+public class UpdateEventRequestDTO
 {
     public Guid Id { get; set; }
 
