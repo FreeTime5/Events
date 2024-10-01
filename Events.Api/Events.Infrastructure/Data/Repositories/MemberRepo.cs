@@ -30,7 +30,7 @@ public class MemberRepo : IMemberRepo
             errors.Add(new Error("There are no user with that id", "", "User"));
         }
 
-        var check = await _dbContext.Registrations.Where(r => r.Event.Id == eventId && r.User.Id == memberId).FirstAsync();
+        var check = await _dbContext.Registrations.Where(r => r.Event.Id == eventId && r.User.Id == memberId).FirstOrDefaultAsync();
         if (check != null)
         {
             errors.Add(new Error("This user is already a member of this event", "", "Registration"));
@@ -45,24 +45,26 @@ public class MemberRepo : IMemberRepo
             Id = Guid.NewGuid(),
             Event = eventEntity,
             User = member,
-            RegistrationDate = DateTime.Now
+            RegistrationDate = DateTime.UtcNow
         });
-
+        await _dbContext.SaveChangesAsync();
         return Result.Success();
     }
 
-    public async Task<List<User>> GetAllFromEvent(Event ev)
+    public async Task<List<User>> GetAllFromEvent(Guid eventId)
     {
-        var eventEntity = await _dbContext.Events.FindAsync(ev.Id);
+        var eventEntity = await _dbContext.Events.FindAsync(eventId);
 
         if (eventEntity == null)
         {
             return [];
         }
 
-        var membersOfEvent = await _dbContext.Registrations.Where(r => r.Event.Id == ev.Id)
+        var membersOfEvent = await _dbContext.Registrations.Where(r => r.Event.Id == eventId)
             .Select(r => r.User)
             .ToListAsync();
+
+        membersOfEvent.ForEach(u => u.Registrations = _dbContext.Registrations.Where(r => r.User.Id == u.Id).ToList());
 
         return membersOfEvent;
     }
@@ -76,7 +78,7 @@ public class MemberRepo : IMemberRepo
 
     public async Task<Result> RemoveFromEvent(string memberId, Guid evId)
     {
-        var registration = await _dbContext.Registrations.Where(r => r.Event.Id == evId && r.User.Id == memberId).FirstAsync();
+        var registration = await _dbContext.Registrations.Where(r => r.Event.Id == evId && r.User.Id == memberId).FirstOrDefaultAsync();
 
         if (registration == null)
         {

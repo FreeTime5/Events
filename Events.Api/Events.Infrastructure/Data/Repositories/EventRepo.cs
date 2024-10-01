@@ -1,5 +1,6 @@
 ﻿using Events.Application.Interfaces;
 using Events.Application.Models;
+using Events.Application.Servicies.ServiciesErrors;
 using Events.Domain.Entities;
 using Events.Domain.Shared;
 using Microsoft.EntityFrameworkCore;
@@ -17,11 +18,11 @@ public class EventRepo : IEventRepo
 
     public async Task<Result> Add(Event ev)
     {
-        var eventEntity = await _dbContext.Events.Where(e => e.Title == ev.Title).FirstAsync();
+        var eventEntity = await _dbContext.Events.Where(e => e.Title == ev.Title).FirstOrDefaultAsync();
 
         if (eventEntity != null)
         {
-            return Result.Failure([new Error("There are event with such title", "", "Event")]);
+            return Result.Failure([EventErrors.DuplicatedEventTitle]);
         }
 
         await _dbContext.Events.AddAsync(ev);
@@ -41,7 +42,7 @@ public class EventRepo : IEventRepo
 
         if (eventEntity == null)
         {
-            return Result.Failure([new Error("There are no event with that id", "", "Event")]);
+            return Result.Failure([EventErrors.EventNotFound]);
         }
 
         _dbContext.Events.Remove(eventEntity);
@@ -52,47 +53,54 @@ public class EventRepo : IEventRepo
 
     public async Task<List<Event>> GetAll()
     {
-        var events = await _dbContext.Events.ToListAsync();
+        
+        var events = await _dbContext.Events.Include(ev => ev.Registrations)
+            .ToListAsync();
         return events;
     }
 
     public async Task<Event?> GetById(Guid id)
     {
-        var eventEntity = await _dbContext.Events.FindAsync(id);
-
+        var eventEntity = await _dbContext.Events.Where(e => e.Id == id)
+            .Include(ev => ev.Registrations)
+            .FirstOrDefaultAsync();
         return eventEntity;
     }
 
     public async Task<Event?> GetByName(string name)
     {
-        var eventEntity = await _dbContext.Events.Where(e => e.Title == name).FirstAsync();
+        var eventEntity = await _dbContext.Events.Where(e => e.Title == name)
+            .Include(ev => ev.Registrations)
+            .FirstOrDefaultAsync();
 
         return eventEntity;
     }
 
     public async Task<Result> Update(Event ev)
     {
-        var eventEntity = _dbContext.Events.Where(e => e.Id == ev.Id);
+        var eventEntity = await _dbContext.Events.FindAsync(ev.Id);
 
         if (eventEntity == null)
         {
-            return Result.Failure([new Error("There are no event with that id", "", "Event")]);
+            return Result.Failure([EventErrors.EventNotFound]);
         }
 
-        var updatedRows = await eventEntity.ExecuteUpdateAsync(updates =>
-             updates.SetProperty(e => e.Title, ev.Title)
-                    .SetProperty(e => e.Describtion, ev.Describtion)
-                    .SetProperty(e => e.EventImage, ev.EventImage)
-                    .SetProperty(e => e.MaxMembers, ev.MaxMembers)
-                    .SetProperty(e => e.Category, ev.Category)
-                    .SetProperty(e => e.Date, ev.Date)
-                    .SetProperty(e => e.Place, ev.Place)
-        );
+        var dublicatedEvent = await _dbContext.Events.Where(e => e.Title == ev.Title && e.Id != ev.Id).FirstOrDefaultAsync();
 
-        if (updatedRows == 0)
+        if (dublicatedEvent != null)
         {
-            return Result.Failure([new Error("Database error", "", "Event")]);
+            return Result.Failure([EventErrors.DuplicatedEventTitle]);
         }
+
+        eventEntity.Title = ev.Title;
+        eventEntity.Describtion = ev.Describtion;
+        eventEntity.ImageUrl = ev.ImageUrl;
+        eventEntity.CategoryId = ev.CategoryId;
+        eventEntity.Date = ev.Date;
+        eventEntity.Place = ev.Place;
+
+        var updatedRows = await _dbContext.SaveChangesAsync();
+
         return Result.Success();
     }
 }

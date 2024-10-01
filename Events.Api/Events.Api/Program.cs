@@ -1,4 +1,6 @@
+using Events.Application.Interfaces;
 using Events.Application.Servicies.ExtensionMethods;
+using Events.Application.Servicies.ImageService;
 using Events.Application.Servicies.Profiles;
 using Events.Domain.Entities;
 using Events.Infrastructure.Data;
@@ -25,6 +27,9 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+
+var imageFolder = Path.Combine(builder.Environment.ContentRootPath, "wwwroot\\EventImages");
+builder.Services.AddSingleton<IImageService, ImageService>(provider => new ImageService(Path.Combine(imageFolder, "default_image.jpg"), imageFolder));
 builder.Services.AddAuthentication();
 builder.Services.AddAutoMapper(typeof(ApplicationProfile));
 builder.Services.AddValidators();

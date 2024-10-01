@@ -1,4 +1,5 @@
 ﻿using Events.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace Events.Application.Servicies.EventService.DTOs;
 
@@ -12,9 +13,9 @@ public class CreateEventRequestDTO
 
     public string Place { get; set; } = string.Empty;
 
-    public Category Category { get; set; }
+    public int? CategoryId { get; set; }
 
     public int MaxMembers { get; set; }
 
-    public Image EventImage { get; set; }
+    public IFormFile? Image { get; set; }
 }

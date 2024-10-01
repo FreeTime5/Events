@@ -12,13 +12,17 @@ public class Event
 
     public string Place { get; set; } = string.Empty;
 
-    public Category Category { get; set; }
+    public Category? Category { get; set; }
+
+    public int? CategoryId { get; set; }
 
     public int MaxMembers { get; set; }
 
     public List<Registration> Registrations { get; set; } = [];
 
-    public Image EventImage { get; set; }
+    public string? ImageUrl { get; set; }
 
-    public bool HasImage { get; set; }
+    public User? Creator { get; set; }
+
+    public string? CreatorId { get; set; }
 }

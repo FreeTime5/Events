@@ -1,4 +1,5 @@
 ﻿using Events.Application.Interfaces;
+using Events.Application.Interfaces.RepoInterfaces;
 using Events.Infrastructure.Data.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,7 @@ public static class ExtensionMethods
     {
         services.AddScoped<IEventRepo, EventRepo>();
         services.AddScoped<IMemberRepo, MemberRepo>();
+        services.AddScoped<ICategoryRepo, CategoryRepo>();
         return services;
     }
 }

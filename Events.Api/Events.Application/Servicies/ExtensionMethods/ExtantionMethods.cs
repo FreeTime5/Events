@@ -10,9 +10,10 @@ public static class ExtantionMethods
 {
     public static IServiceCollection AddApplicationServicies(this IServiceCollection services)
     {
-        services.AddScoped<EventService.EventService>();
-        services.AddScoped<MemberService.MemberService>();
+        services.AddScoped<IEventService, EventService.EventService>();
+        services.AddScoped<IMemberService, MemberService.MemberService>();
         services.AddScoped<IAccountService, AccountService.AccountService>();
+        services.AddScoped<ICategoryService, CategoryService.CategoryService>();
 
         return services;
     }

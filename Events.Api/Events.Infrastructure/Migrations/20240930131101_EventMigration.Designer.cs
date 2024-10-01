@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Events.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240925111927_Initial")]
-    partial class Initial
+    [Migration("20240930131101_EventMigration")]
+    partial class EventMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -49,8 +49,11 @@ namespace Events.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("int");
+
+                    b.Property<string>("CreatorId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -60,11 +63,9 @@ namespace Events.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<Guid>("EventImageId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("HasImage")
-                        .HasColumnType("bit");
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("MaxMembers")
                         .HasColumnType("int");
@@ -82,25 +83,9 @@ namespace Events.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("EventImageId");
+                    b.HasIndex("CreatorId");
 
                     b.ToTable("Events");
-                });
-
-            modelBuilder.Entity("Events.Domain.Entities.Image", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Images");
                 });
 
             modelBuilder.Entity("Events.Domain.Entities.Registration", b =>
@@ -343,19 +328,15 @@ namespace Events.Infrastructure.Migrations
                 {
                     b.HasOne("Events.Domain.Entities.Category", "Category")
                         .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CategoryId");
 
-                    b.HasOne("Events.Domain.Entities.Image", "EventImage")
+                    b.HasOne("Events.Domain.Entities.User", "Creator")
                         .WithMany()
-                        .HasForeignKey("EventImageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CreatorId");
 
                     b.Navigation("Category");
 
-                    b.Navigation("EventImage");
+                    b.Navigation("Creator");
                 });
 
             modelBuilder.Entity("Events.Domain.Entities.Registration", b =>

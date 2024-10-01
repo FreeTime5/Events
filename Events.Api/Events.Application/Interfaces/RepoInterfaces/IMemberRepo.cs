@@ -1,11 +1,12 @@
 ﻿using Events.Application.Models;
+using Events.Application.Servicies.MemberService.DTOs;
 using Events.Domain.Entities;
 
 namespace Events.Application.Interfaces;
 
 public interface IMemberRepo
 {
-    Task<List<User>> GetAllFromEvent(Event ev);
+    Task<List<User>> GetAllFromEvent(Guid eventId);
 
     Task<Result> AddToEvent(string memberId, Guid eventId);
 

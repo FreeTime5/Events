@@ -1,4 +1,5 @@
 ﻿using Events.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace Events.Application.Servicies.EventService.DTOs;
 
@@ -6,17 +7,15 @@ public class UpdateEventRequestDTO
 {
     public Guid Id { get; set; }
 
-    public string Title { get; set; } = string.Empty;
+    public string? Title { get; set; }
 
-    public string Describtion { get; set; } = string.Empty;
+    public string? Describtion { get; set; }
 
-    public DateTime Date { get; set; }
+    public DateTime? Date { get; set; }
 
-    public string Place { get; set; } = string.Empty;
+    public string? Place { get; set; }
 
-    public Category Category { get; set; }
+    public int? CategoryId { get; set; }
 
-    public int MaxMembers { get; set; }
-
-    public Image EventImage { get; set; }
+    public IFormFile? Image { get; set; }
 }

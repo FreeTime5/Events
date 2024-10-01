@@ -5,6 +5,7 @@ using Events.Application.Servicies.ServiciesErrors;
 using Events.Domain.Entities;
 using Events.Domain.Shared;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 namespace Events.Application.Servicies.AccountService;
 
@@ -18,6 +19,16 @@ public class AccountService : IAccountService
 
         _userManager = userManager;
         _signInManager = signInManager;
+    }
+
+    public async Task<User?> GetUser(ClaimsPrincipal claims)
+    {
+        return await _userManager.GetUserAsync(claims);
+    }
+
+    public bool IsSignIn(ClaimsPrincipal claims)
+    {
+        return _signInManager.IsSignedIn(claims);
     }
 
     public async Task<Result> LogIn(LogInRequestDTO requestDTO)
@@ -38,6 +49,7 @@ public class AccountService : IAccountService
         return Result.Success();
     }
 
+
     public async Task LogOut() => await _signInManager.SignOutAsync();
 
     public async Task<Result> RegisterUserAndSignIn(RegisterRequestDTO requestDTO)
@@ -48,7 +60,7 @@ public class AccountService : IAccountService
             UserName = requestDTO.UserName,
         };
         var result = await _userManager.CreateAsync(user, requestDTO.Password);
-        await _userManager.AddToRoleAsync(user, "User");
+        
 
         if (!result.Succeeded)
         {
@@ -59,6 +71,7 @@ public class AccountService : IAccountService
             }
             return Result.Failure(errors);
         }
+        await _userManager.AddToRoleAsync(user, "User");
         await _signInManager.SignInAsync(user, true);
 
         return Result.Success();
