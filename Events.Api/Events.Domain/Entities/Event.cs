@@ -2,7 +2,7 @@
 
 public class Event
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Id { get; set; }
 
     public string Title { get; set; } = string.Empty;
 
@@ -14,13 +14,13 @@ public class Event
 
     public Category? Category { get; set; }
 
-    public int? CategoryId { get; set; }
+    public string? CategoryId { get; set; }
 
     public int MaxMembers { get; set; }
 
     public List<Registration> Registrations { get; set; } = [];
 
-    public string? ImageUrl { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
 
     public User? Creator { get; set; }
 

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <UserSecretsId>cb920489-9676-40b7-b58b-96eba517ad4c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="Microsoft.Playwright.NUnit" Version="1.27.1" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+    <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Events.Client\events.client\events.client.esproj" />
+    <ProjectReference Include="..\Events.Api\Events.Api.csproj" />
+    <ProjectReference Include="..\Events.Application\Events.Application.csproj" />
+    <ProjectReference Include="..\Events.Domain\Events.Domain.csproj" />
+    <ProjectReference Include="..\Events.Infrastructure\Events.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.Playwright.NUnit" />
+    <Using Include="NUnit.Framework" />
+    <Using Include="System.Text.RegularExpressions" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
+
+</Project>

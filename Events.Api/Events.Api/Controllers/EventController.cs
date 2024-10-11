@@ -1,128 +1,120 @@
-﻿using Events.Application.Interfaces;
-using Events.Application.Models;
-using Events.Application.Servicies.EventService.DTOs;
-using Events.Application.Servicies.ServiciesErrors;
+﻿using Events.Api.Filters;
+using Events.Application.Models.Event;
+using Events.Application.Services.Account;
+using Events.Application.Services.EventService;
+using Events.Domain.Exceptions;
 using Events.Domain.Shared;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Events.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("[controller]")]
 public class EventController : Controller
 {
-    private readonly IEventService _eventService;
+    private readonly IEventService eventService;
 
-    private readonly IAccountService _accoutService;
+    private readonly IAccountService accoutService;
 
     public EventController(IEventService eventService, IAccountService accountService)
     {
-        _eventService = eventService;
-        _accoutService = accountService;
+        this.eventService = eventService;
+        accoutService = accountService;
     }
 
-    [Route("[action]")]
+    [Route("List")]
     [HttpGet]
-    public async Task<IActionResult> Events([FromQuery] int page)
+    [ServiceFilter(typeof(BindingFilter))]
+    public IActionResult Events([FromQuery] int page)
     {
         if (page < 1)
         {
-            return BadRequest(Result.Failure([new Error("Incorrect page number", "", "PaginationPage")]));
+            return BadRequest(new Error("Invalid page", 400));
         }
-        var events = await _eventService.GetEventsWithPagination(page);
+        var events = eventService.GetEventsWithPagination(page);
 
         if (events.Count() == 0 && page != 1)
         {
-            return BadRequest(Result.Failure([new Error("Incorrect page number", "", "PaginationPage")]));
+            return BadRequest(new Error("Invalid page", 400));
         }
+
         return Ok(events);
     }
 
-    [Route("[action]")]
+    [Route("Add")]
     [HttpPost]
+    [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> CreateEvents([FromForm] CreateEventRequestDTO requestDTO)
     {
-        if (!_accoutService.IsSignIn(User))
-        {
-            return BadRequest();
-        }
-        var user = await _accoutService.GetUser(User);
+        var user = await accoutService.GetUser(User);
 
         if (user == null)
         {
-            return BadRequest(Result.Failure([AccountErrors.UserNotFound]));
+            throw new ItemNotFoundException("User");
         }
 
-        var result = await _eventService.Create(requestDTO, user);
+        await eventService.Create(requestDTO, user);
 
-        if (!result.Secceeded)
-        {
-            return BadRequest(result);
-        }
-        return Ok(result);
+        return Ok();
     }
 
-    [Route("[action]")]
+    [Route("Delete")]
     [HttpDelete]
-    public async Task<IActionResult> DeleteEvent([FromBody] Guid EventId)
+    [ServiceFilter(typeof(BindingFilter))]
+    public async Task<IActionResult> DeleteEvent([FromBody] string EventId)
     {
-        var user = await _accoutService.GetUser(User);
+        var user = await accoutService.GetUser(User);
         if (user == null)
         {
-            return BadRequest(Result.Failure([AccountErrors.UserNotFound]));
+            throw new ItemNotFoundException("User");
         }
-        var result = await _eventService.DeleteEvent(EventId, user);
 
-        if (!result.Secceeded)
-        {
-            return BadRequest(result);
-        }
-        return Ok(result);
+        await eventService.DeleteEvent(EventId, user);
+
+        return Ok();
     }
 
-    [Route("[action]")]
-    [HttpPost]
+    [Route("Update")]
+    [HttpPut]
+    [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> UpdateEvent([FromForm] UpdateEventRequestDTO requestDTO)
     {
-        var result = await _eventService.UpdateEvent(requestDTO);
 
-        if (!result.Secceeded)
-            return BadRequest(result);
+        await eventService.UpdateEvent(requestDTO, User);
 
-        return Ok(result);
+        return Ok();
     }
 
-    
+
 
     [Route("Id")]
     [HttpGet]
-    public async Task<IActionResult> Event([FromQuery] Guid eventId)
+    [ServiceFilter(typeof(BindingFilter))]
+    public async Task<IActionResult> EventById([FromQuery] string eventId)
     {
-        var ev = await _eventService.GetEventById(eventId);
-
-        if (ev == null)
-            return BadRequest(Result.Failure([EventErrors.EventNotFound]));
+        var ev = await eventService.GetEventById(eventId);
 
         return Ok(ev);
     }
-    
+
     [Route("Title")]
     [HttpGet]
-    public async Task<IActionResult> Event([FromQuery] string title)
+    [ServiceFilter(typeof(BindingFilter))]
+    public async Task<IActionResult> EventByTitle([FromQuery] string title)
     {
-        var ev = await _eventService.GetEventsByName(title);
-
-        if (ev == null)
-            return BadRequest(Result.Failure([EventErrors.EventNotFound]));
+        var ev = await eventService.GetEventsByName(title);
 
         return Ok(ev);
     }
 
     [Route("Filter")]
     [HttpGet]
-    public async Task<IActionResult> Events([FromQuery] string filterItem, [FromQuery] string filterValue)
+    [ServiceFilter(typeof(BindingFilter))]
+    public IActionResult EventsWithFilter([FromQuery] string filterItem, [FromQuery] string filterValue, [FromQuery] int page)
     {
-        var events = await _eventService.GetFilteredEvents(filterItem, filterValue);
+        var events = eventService.GetFilteredEvents(page, filterItem, filterValue);
 
         return Ok(events);
     }
