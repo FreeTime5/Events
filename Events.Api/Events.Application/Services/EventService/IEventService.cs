@@ -14,7 +14,9 @@ public interface IEventService
 
     Task<GetEventsResponseDTO> GetEventsByName(string name);
 
-    Task UpdateEvent(UpdateEventRequestDTO eventRequestDTO, ClaimsPrincipal claims);
+    Task<IEnumerable<GetAllUsersResponseDTO>> GetAllUsersRegistredOnEvent(string eventId);
+
+    Task UpdateEvent(UpdateEventRequestDTO eventRequestDTO, User claims);
 
     IEnumerable<GetEventsResponseDTO> GetFilteredEvents(int page, string sortItem, string sortValue);
 

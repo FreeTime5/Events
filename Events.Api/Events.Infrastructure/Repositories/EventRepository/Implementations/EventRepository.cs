@@ -42,19 +42,24 @@ internal class EventRepository : IEventRepository
 
     public IQueryable<Event> GetAll()
     {
-        return dbContext.Events.Include(ev => ev.Registrations);
+        return dbContext.Events;
     }
 
     public async Task<Event?> GetById(string id)
     {
-        return await dbContext.Events.Include(ev => ev.Registrations).FirstOrDefaultAsync(x => x.Id == id);
+        return await dbContext.Events.FindAsync(id);
+    }
+
+    public async Task<Event?> GetByIdWithRegistrations(string id)
+    {
+        var eventInstance = await dbContext.Events.Include(e => e.Registrations).FirstOrDefaultAsync(e => e.Id == id);
+        return eventInstance;
+
     }
 
     public async Task<Event?> GetByName(string name)
     {
-        var eventEntity = await dbContext.Events.Where(e => e.Title == name)
-            .Include(ev => ev.Registrations)
-            .FirstOrDefaultAsync();
+        var eventEntity = await dbContext.Events.Where(e => e.Title == name).FirstOrDefaultAsync();
 
         return eventEntity;
     }

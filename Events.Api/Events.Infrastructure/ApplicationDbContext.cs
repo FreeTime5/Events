@@ -87,6 +87,10 @@ public class ApplicationDbContext : IdentityDbContext<User>
                 .HasForeignKey(r => r.EventId)
                 .HasPrincipalKey(e => e.Id);
 
+            entity.Navigation(r => r.User)
+                .AutoInclude();
+            entity.Navigation(r => r.Event)
+                .AutoInclude();
             entity.Property(e => e.Id)
                 .HasValueGenerator<GuidValueGenerator>()
                 .ValueGeneratedOnAdd();

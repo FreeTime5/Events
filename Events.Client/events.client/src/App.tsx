@@ -9,8 +9,12 @@ import {
 import { Pages, serverUrl, User } from "./constants";
 import HeaderMenu from "./Menu/HeaderMenu";
 import axios from "axios";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 const userContext = createContext(null);
+
+const Stack = createNativeStackNavigator();
 
 function App() {
   const [pageNumber, setPageNumber] = useState(1);
@@ -34,7 +38,11 @@ function App() {
         <GridItem colSpan={2}>
           <HeaderMenu user={user} updatePage={setPage}></HeaderMenu>
         </GridItem>
-        <GridItem>{data}</GridItem>
+        <NavigationContainer>
+          <Stack.Navigator>
+            <Stack.Screen name="Home" component={HomeScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
       </Grid>
     </ChakraProvider>
   );

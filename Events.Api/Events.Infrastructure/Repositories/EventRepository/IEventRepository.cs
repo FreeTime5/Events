@@ -8,6 +8,8 @@ public interface IEventRepository
 
     Task<Event?> GetById(string id);
 
+    Task<Event?> GetByIdWithRegistrations(string id);
+
     Task<Event?> GetByName(string name);
 
     Task<bool> Add(Event ev);

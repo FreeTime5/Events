@@ -1,5 +1,7 @@
 ﻿using Events.Api.ApiServices.CookieService;
 using Events.Api.ApiServices.CookieService.Implementations;
+using Events.Api.ApiServices.EmailService.Implementations;
+using Events.Api.ApiServices.EmailService;
 using Events.Api.Middlewares;
 using Events.Application.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -95,5 +97,15 @@ public static class AppExtensions
     public static IServiceCollection AddAppCookieService(this IServiceCollection services)
     {
         return services.AddScoped<ICookieService, CookieService>();
+    }
+
+    public static IServiceCollection AddEmailService(this IServiceCollection services, IConfiguration configuration)
+    {
+        var email = configuration.GetValue<string>("EmailInformation:Email");
+        var password = configuration.GetValue<string>("EmailInformation:Password");
+        var serverHost = configuration.GetValue<string>("EmailInformation:ServerHost");
+
+        services.AddTransient<IEmailService, EmailService>(provider => new EmailService(email, password, serverHost));
+        return services;
     }
 }

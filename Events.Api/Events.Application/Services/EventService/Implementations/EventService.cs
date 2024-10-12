@@ -156,8 +156,6 @@ internal class EventService : IEventService
         return false;
     }
 
-
-
     private Func<Event, bool> GetFilterItem(string filter, string filterValue)
     {
         switch (filter.ToLower())
@@ -175,7 +173,7 @@ internal class EventService : IEventService
         return ev => ev.Place == filterValue;
     }
 
-    public async Task UpdateEvent(UpdateEventRequestDTO requestDTO, ClaimsPrincipal claims)
+    public async Task UpdateEvent(UpdateEventRequestDTO requestDTO, User user)
     {
         var validationResult = await updateValidator.ValidateAsync(requestDTO);
 
@@ -189,8 +187,6 @@ internal class EventService : IEventService
         {
             throw new ItemNotFoundException("Event");
         }
-
-        var user = await userManager.GetUserAsync(claims);
 
         if (!await userManager.IsInRoleAsync(user, "Admin") && user.Id != previousEvent.CreatorId)
         {
@@ -242,5 +238,17 @@ internal class EventService : IEventService
         eventDTO.CategoryName = ev.Category != null ? ev.Category.Name : null;
 
         return eventDTO;
+    }
+
+    public async Task<IEnumerable<GetAllUsersResponseDTO>> GetAllUsersRegistredOnEvent(string eventId)
+    {
+        var eventInstance = await unitOfWork.EventRepository.GetByIdWithRegistrations(eventId);
+
+        if (eventInstance == null)
+        {
+            throw new ItemNotFoundException("Event");
+        }
+
+        return eventInstance.Registrations.Select(r => r.User).Select(u => new GetAllUsersResponseDTO() { Email = u.Email, UserName = u.UserName });
     }
 }

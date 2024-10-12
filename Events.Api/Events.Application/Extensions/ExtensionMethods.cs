@@ -24,7 +24,7 @@ namespace Events.Application.Extensions;
 
 public static class ExtensionMethods
 {
-    public static IServiceCollection AddServices(this IServiceCollection services)
+    public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
         services.AddRepositories();
         services.AddUnitOfWork();

@@ -19,13 +19,13 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-
 builder.AddImager()
     .AddFilters()
     .AddValidators()
-    .AddServices()
+    .AddAppServices()
     .AddAppCookieService()
-    .AddAppAthorization();
+    .AddAppAthorization()
+    .AddEmailService(builder.Configuration);
 
 builder.AddAppAuthentication();
 

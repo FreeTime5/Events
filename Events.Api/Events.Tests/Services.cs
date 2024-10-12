@@ -37,7 +37,7 @@ namespace Events.Tests
             builder.AddImager()
                 .AddFilters()
                 .AddValidators()
-                .AddServices()
+                .AddAppServices()
                 .AddAppCookieService()
                 .AddAppAthorization();
 

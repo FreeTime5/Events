@@ -1,4 +1,5 @@
-﻿using Events.Api.Filters;
+﻿using Events.Api.ApiServices.EmailService;
+using Events.Api.Filters;
 using Events.Application.Models.Event;
 using Events.Application.Services.Account;
 using Events.Application.Services.EventService;
@@ -17,11 +18,15 @@ public class EventController : Controller
     private readonly IEventService eventService;
 
     private readonly IAccountService accoutService;
+    private readonly IEmailService emailService;
 
-    public EventController(IEventService eventService, IAccountService accountService)
+    public EventController(IEventService eventService,
+        IAccountService accountService,
+        IEmailService emailService)
     {
         this.eventService = eventService;
         accoutService = accountService;
+        this.emailService = emailService;
     }
 
     [Route("List")]
@@ -81,8 +86,19 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> UpdateEvent([FromForm] UpdateEventRequestDTO requestDTO)
     {
+        var user = await accoutService.GetUser(User);
 
-        await eventService.UpdateEvent(requestDTO, User);
+        await eventService.UpdateEvent(requestDTO, user);
+
+        var users = await eventService.GetAllUsersRegistredOnEvent(requestDTO.Id);
+
+        foreach (var userDto in users)
+        {
+            if (!string.IsNullOrEmpty(user.Email))
+            {
+                await emailService.SendEmail(user.Email, "Events", "Event was updated");
+            }
+        }
 
         return Ok();
     }
