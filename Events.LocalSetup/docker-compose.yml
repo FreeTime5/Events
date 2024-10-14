@@ -1,0 +1,35 @@
+version: '3.7'
+
+services:
+  backend:
+    build: ../Events.Api
+    ports:
+      - "3000:3000"
+    environment:
+      ASPNETCORE_URLS: http://+:3000
+      ConnectionStrings__EventDatabase: ${CONNECTION_STRING}
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audince: ${JWT_AUDIECE}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    container_name: sql-server
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${SA_PASSWORD}"
+    ports:
+      - 1433:1433
+    volumes:
+      - db-volume:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-Usa", "-P${SA_PASSWORD}", "-Q", "select 1"]
+      interval: 1s
+      retries: 20
+
+volumes:
+  db-volume:

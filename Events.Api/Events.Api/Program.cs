@@ -8,16 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("EventDatabase")));
+builder.Services.AddAppDbContext(builder.Configuration);
 
-builder.Services.AddIdentity<User, IdentityRole>(options =>
-{
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+builder.Services.AddAppIdentity();
+
 
 builder.AddImager()
     .AddFilters()
@@ -29,26 +23,26 @@ builder.AddImager()
 
 builder.AddAppAuthentication();
 
-builder.Services.AddCors(options => options.AddPolicy("ClientApp", policy =>
-{
-    policy.WithOrigins(builder.Configuration.GetValue<string>("ClientAppUrl")!)
-        .AllowAnyMethod()
-        .AllowAnyHeader();
-}));
+builder.Services.AddAppCors(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddProblemDetails();
 
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 app.UseAppExceptionHandler();
 
-if (app.Environment.IsDevelopment())
-{
-    await app.UseDevelopment();
-}
+app.UseCors("ClientApp");
+
+app.ApplyMigrations();
+
+await app.UseDevelopment();
+
 
 
 app.UseDefaultFiles();
@@ -64,4 +58,6 @@ app.Map("/", (HttpResponse response) =>
     response.Redirect(app.Configuration.GetValue<string>("ClientAppUrl")!);
 });
 
+
 app.Run();
+

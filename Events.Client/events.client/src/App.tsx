@@ -1,48 +1,27 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useState } from "react";
 import "./App.css";
-import {
-  ChakraProvider,
-  Grid,
-  GridItem,
-  useStatStyles,
-} from "@chakra-ui/react";
-import { Pages, serverUrl, User } from "./constants";
+import { ChakraProvider, Grid, GridItem } from "@chakra-ui/react";
+import { User } from "./constants";
 import HeaderMenu from "./Menu/HeaderMenu";
-import axios from "axios";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
-const userContext = createContext(null);
-
-const Stack = createNativeStackNavigator();
+import RegisterScreen from "./screens/RegisterScreen";
 
 function App() {
-  const [pageNumber, setPageNumber] = useState(1);
-  let data = "";
-  useEffect(() => {
-    axios.get(`${serverUrl}/Event/Events/${pageNumber}`).then((response) => {
-      data = response.data;
-    });
-  }, []);
-
   const [user, setUser] = useState<User>({
-    userName: "",
-    role: "",
-    isSignIn: false,
+    jwtToken: "",
+    refreshToken: "",
+    isSignin: false,
   });
-  const [page, setPage] = useState(Pages.home);
 
   return (
     <ChakraProvider>
       <Grid templateColumns="20% 80%">
         <GridItem colSpan={2}>
-          <HeaderMenu user={user} updatePage={setPage}></HeaderMenu>
+          <HeaderMenu user={user} navigation={user}></HeaderMenu>
         </GridItem>
-        <NavigationContainer>
-          <Stack.Navigator>
-            <Stack.Screen name="Home" component={HomeScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <GridItem colSpan={1}></GridItem>
+        <GridItem colSpan={1}>
+          <RegisterScreen user={user}></RegisterScreen>
+        </GridItem>
       </Grid>
     </ChakraProvider>
   );

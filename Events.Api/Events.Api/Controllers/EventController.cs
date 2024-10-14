@@ -48,7 +48,6 @@ public class EventController : Controller
         return Ok(events);
     }
 
-    [Route("Add")]
     [HttpPost]
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> CreateEvents([FromForm] CreateEventRequestDTO requestDTO)
@@ -65,7 +64,6 @@ public class EventController : Controller
         return Ok();
     }
 
-    [Route("Delete")]
     [HttpDelete]
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> DeleteEvent([FromBody] string EventId)
@@ -81,7 +79,6 @@ public class EventController : Controller
         return Ok();
     }
 
-    [Route("Update")]
     [HttpPut]
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> UpdateEvent([FromForm] UpdateEventRequestDTO requestDTO)

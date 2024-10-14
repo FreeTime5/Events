@@ -27,4 +27,6 @@ internal class EmailService : IEmailService
 
         await client.SendMailAsync(new MailMessage(from: mail, to: email, subject, message));
     }
+
+
 }

@@ -22,7 +22,6 @@ namespace Events.Api.Controllers
             this.userManager = userManager;
         }
 
-        [Route("Add")]
         [HttpPost]
         [ServiceFilter(typeof(BindingFilter))]
         public async Task<IActionResult> Add([FromBody] string name)
@@ -39,7 +38,6 @@ namespace Events.Api.Controllers
             return Ok();
         }
 
-        [Route("Remove")]
         [HttpDelete]
         [ServiceFilter(typeof(BindingFilter))]
         public async Task<IActionResult> Delete([FromBody] string name)

@@ -42,10 +42,6 @@ namespace Events.Api.Middlewares
             {
                 await HandleExceptionAsync(context, ex.Message, HttpStatusCode.Unauthorized, ex.Message);
             }
-            catch (Exception ex)
-            {
-                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.BadRequest, ex.Message);
-            }
 
         }
 

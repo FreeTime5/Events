@@ -22,7 +22,6 @@ public class MemberController : Controller
         this.accountService = accountService;
     }
 
-    [Route("Add")]
     [HttpPost]
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> RegisterOnEvent([FromBody] string eventId)
@@ -44,7 +43,6 @@ public class MemberController : Controller
         return Ok();
     }
 
-    [Route("Remove")]
     [HttpDelete]
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> LeaveTheEvent([FromBody] string eventId)

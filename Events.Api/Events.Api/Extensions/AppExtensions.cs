@@ -10,11 +10,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Events.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Events.Domain.Entities;
 
 namespace Events.Api.Extensions;
 
 public static class AppExtensions
 {
+
     public static async Task UseDevelopment(this WebApplication app)
     {
         app.UseSwagger();
@@ -33,6 +37,27 @@ public static class AppExtensions
                 }
             }
         }
+    }
+
+    public static IServiceCollection AddAppDbContext(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("EventDatabase")));
+
+        return services;
+    }
+
+    public static IServiceCollection AddAppIdentity(this IServiceCollection services)
+    {
+        services.AddIdentity<User, IdentityRole>(options =>
+        {
+            options.Password.RequiredLength = 6;
+            options.Password.RequireNonAlphanumeric = false;
+        })
+        .AddEntityFrameworkStores<ApplicationDbContext>()
+        .AddDefaultTokenProviders();
+
+        return services;
     }
 
     public static IServiceCollection AddImager(this WebApplicationBuilder builder)
@@ -82,6 +107,18 @@ public static class AppExtensions
         return builder.Services;
     }
 
+    public static IServiceCollection AddAppCors(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddCors(options => options.AddPolicy("ClientApp", policy =>
+        {
+            policy.WithOrigins(configuration.GetValue<string>("ClientAppUrl")!)
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        }));
+
+        return services;
+    }
+
     public static IServiceCollection AddAppAthorization(this IServiceCollection services)
     {
         services.AddAuthorization(options =>
@@ -107,5 +144,20 @@ public static class AppExtensions
 
         services.AddTransient<IEmailService, EmailService>(provider => new EmailService(email, password, serverHost));
         return services;
+    }
+
+    public static void ApplyMigrations(this WebApplication app)
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            if (context.Database.GetPendingMigrations().Any())
+            {
+                context.Database.Migrate();
+            }
+        }
+
     }
 }

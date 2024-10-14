@@ -1,9 +1,9 @@
 export const serverUrl = "http://localhost:5078";
 
 export type User = {
-    isSignIn: boolean,
-    userName: string,
-    role: string,
+    jwtToken: string,
+    refreshToken: string,
+    isSignin: boolean
 }
 
 export type RegisterDTO = {

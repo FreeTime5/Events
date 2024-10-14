@@ -12,8 +12,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Events.Domain", "Events.Dom
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Events.Tests", "Events.Tests\Events.Tests.csproj", "{0C491866-E007-43DD-8146-B82EDA6431DE}"
 EndProject
-Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "events.client", "..\Events.Client\events.client\events.client.esproj", "{1C942588-2082-4408-81F0-E17539B21F65}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Events.Application", "Events.Application\Events.Application.csproj", "{15131782-0D73-43AC-B172-30FBCC475FE3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Events.Infrastructure", "Events.Infrastructure\Events.Infrastructure.csproj", "{4D310B50-6F01-4FF7-82D2-CC146F40C759}"
@@ -36,12 +34,6 @@ Global
 		{0C491866-E007-43DD-8146-B82EDA6431DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C491866-E007-43DD-8146-B82EDA6431DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C491866-E007-43DD-8146-B82EDA6431DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1C942588-2082-4408-81F0-E17539B21F65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1C942588-2082-4408-81F0-E17539B21F65}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1C942588-2082-4408-81F0-E17539B21F65}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{1C942588-2082-4408-81F0-E17539B21F65}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1C942588-2082-4408-81F0-E17539B21F65}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1C942588-2082-4408-81F0-E17539B21F65}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{15131782-0D73-43AC-B172-30FBCC475FE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{15131782-0D73-43AC-B172-30FBCC475FE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15131782-0D73-43AC-B172-30FBCC475FE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
