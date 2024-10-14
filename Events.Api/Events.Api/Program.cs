@@ -1,64 +1,63 @@
-using Events.Application.Servicies.ExtensionMethods;
-using Events.Application.Servicies.Profiles;
+using Events.Api.Extensions;
+using Events.Api.Filters;
+using Events.Application.Extensions;
 using Events.Domain.Entities;
-using Events.Infrastructure.Data;
-using Events.Infrastructure.ExtensionMethods;
+using Events.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddAppDbContext(builder.Configuration);
+
+builder.Services.AddAppIdentity();
+
+
+builder.AddImager()
+    .AddFilters()
+    .AddValidators()
+    .AddAppServices()
+    .AddAppCookieService()
+    .AddAppAthorization()
+    .AddEmailService(builder.Configuration);
+
+builder.AddAppAuthentication();
+
+builder.Services.AddAppCors(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("EventDatabase")));
-
-builder.Services.AddIdentity<User, IdentityRole>(options =>
-{
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
-
-builder.Services.AddAuthentication();
-builder.Services.AddAutoMapper(typeof(ApplicationProfile));
-builder.Services.AddValidators();
-builder.Services.AddApplicationServicies();
-builder.Services.AddRepositories();
+builder.Services.AddProblemDetails();
 
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseExceptionHandler();
 
-using (var scope = app.Services.CreateScope())
-{
-    var roleManager = scope.ServiceProvider.GetService<RoleManager<IdentityRole>>()!;
-    var roles = app.Configuration.GetSection("Roles").Get<string[]>()!;
+app.UseAppExceptionHandler();
 
-    foreach (var role in roles)
-    {
-        if (await roleManager.FindByNameAsync(role) == null)
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-}
-app.UseHttpsRedirection();
+app.UseCors("ClientApp");
+
+app.ApplyMigrations();
+
+await app.UseDevelopment();
+
+
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();
 
+app.Map("/", (HttpResponse response) =>
+{
+    response.Redirect(app.Configuration.GetValue<string>("ClientAppUrl")!);
+});
+
+
 app.Run();
+

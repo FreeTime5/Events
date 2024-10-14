@@ -1,17 +1,21 @@
-﻿namespace Events.Domain.Shared;
+﻿using System.Text.Json;
+
+namespace Events.Domain.Shared;
 
 public class Error
 {
     public string Message { get; set; }
 
-    public string Code { get; set; }
+    public int Code { get; set; }
 
-    public string Name { get; set; }
-
-    public Error(string message, string code, string name)
+    public Error(string message, int code)
     {
         Message = message;
         Code = code;
-        Name = name;
+    }
+
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this);
     }
 }

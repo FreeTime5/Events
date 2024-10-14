@@ -1,6 +1,4 @@
-﻿using Events.Domain.Shared;
-
-namespace Events.Application.Models;
+﻿namespace Events.Domain.Shared;
 
 public class Result
 {
