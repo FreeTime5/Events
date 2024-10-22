@@ -1,16 +1,14 @@
-﻿using Events.Domain.Entities;
+﻿using Events.Infrastructure.Entities;
 
 namespace Events.Infrastructure.Repositories.MemberRepository;
 
 public interface IMemberRepository
 {
-    Task<IQueryable<User>> GetAllFromEvent(string eventId);
+    IQueryable<MemberDb> GetAllFromEvent(EventDb eventEntity);
 
-    Task AddToEvent(string memberId, string eventId);
+    Task<MemberDb?> GetById(string id);
 
-    Task RemoveFromEvent(string memberId, string evId);
+    Task<MemberDb?> GetByName(string userName);
 
-    Task<User?> GetById(string id);
-
-    Task Update(User user);
+    Task Update(MemberDb member);
 }

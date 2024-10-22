@@ -1,14 +1,13 @@
 ﻿using Events.Application.Models.Event;
-using Events.Domain.Entities;
 using System.Security.Claims;
 
 namespace Events.Application.Services.EventService;
 
 public interface IEventService
 {
-    Task Create(CreateEventRequestDTO eventRequestDTO, User user);
+    Task Create(CreateEventRequestDTO eventRequestDTO, ClaimsPrincipal claims);
 
-    Task DeleteEvent(string eventId, User user);
+    Task DeleteEvent(string eventId, ClaimsPrincipal claims);
 
     Task<GetEventsResponseDTO> GetEventById(string id);
 
@@ -16,7 +15,7 @@ public interface IEventService
 
     Task<IEnumerable<GetAllUsersResponseDTO>> GetAllUsersRegistredOnEvent(string eventId);
 
-    Task UpdateEvent(UpdateEventRequestDTO eventRequestDTO, User claims);
+    Task<IEnumerable<GetAllUsersResponseDTO>> UpdateEvent(UpdateEventRequestDTO eventRequestDTO, ClaimsPrincipal claims);
 
     IEnumerable<GetEventsResponseDTO> GetFilteredEvents(int page, string sortItem, string sortValue);
 

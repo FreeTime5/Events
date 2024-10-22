@@ -1,7 +1,7 @@
-﻿using Events.Application.Models.Account;
+﻿using Events.Application.Exceptions;
+using Events.Application.Models.Account;
 using Events.Application.Services.Account;
-using Events.Domain.Entities;
-using Events.Domain.Exceptions;
+using Events.Infrastructure.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -15,12 +15,12 @@ namespace Events.Application.Services.AccountService.Implementations
 {
     internal class AccountService : IAccountService
     {
-        private readonly UserManager<User> userManager;
+        private readonly UserManager<MemberDb> userManager;
         private readonly IValidator<LogInRequestDTO> logInValidator;
         private readonly IValidator<RegisterRequestDTO> registerValidator;
         private readonly IConfiguration configuration;
 
-        public AccountService(UserManager<User> userManager,
+        public AccountService(UserManager<MemberDb> userManager,
             IValidator<LogInRequestDTO> logInValidator,
             IValidator<RegisterRequestDTO> registerValidator,
             IConfiguration configuration)
@@ -31,9 +31,9 @@ namespace Events.Application.Services.AccountService.Implementations
             this.configuration = configuration;
         }
 
-        public async Task<User?> GetUser(ClaimsPrincipal claims)
+        public async Task<MemberDb?> GetUser(ClaimsPrincipal claims)
         {
-            return await userManager.FindByNameAsync(claims.Identity.Name);
+            return await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
         }
 
         public async Task<LogInResoponseDTO> LogIn(LogInRequestDTO requestDTO)
@@ -45,16 +45,11 @@ namespace Events.Application.Services.AccountService.Implementations
                 throw new ValidationException(validateResult.Errors);
             }
 
-            var user = await userManager.FindByNameAsync(requestDTO.UserName);
-
-            if (user == null)
-            {
-                throw new ItemNotFoundException("User");
-            }
+            var user = await userManager.FindByNameAsync(requestDTO.UserName) ?? throw new ItemNotFoundException("User");
 
             if (!await userManager.CheckPasswordAsync(user, requestDTO.Password))
             {
-                throw new Exception("Incorrect password");
+                throw new AuthorizationException("Incorrect password");
             }
 
             return await GenerateLogInResponse(user);
@@ -75,16 +70,26 @@ namespace Events.Application.Services.AccountService.Implementations
             return new LogInResoponseDTO();
         }
 
+        public async Task<LogInResoponseDTO> IsLogIn(string accessToken, string userName)
+        {
+            var loginResponse = new LogInResoponseDTO();
+
+            var user = await userManager.FindByNameAsync(userName) ?? throw new ItemNotFoundException("User");
+
+            loginResponse.RefreshToken = user.RefreshToken;
+            loginResponse.JwtToken = accessToken;
+            loginResponse.IsLogedIn = true;
+
+            return loginResponse;
+        }
+
         public async Task<LogInResoponseDTO> RefreshToken(RefreshTokenRequestDTO requestDTO)
         {
             var principal = GetTokenPrincipal(requestDTO.JwtToken);
 
-            if (principal?.Identity?.Name == null)
-            {
-                throw new UserNotSignedInException();
-            }
+            var userName = principal?.Identity?.Name ?? throw new UserNotSignedInException();
 
-            var user = await userManager.FindByNameAsync(principal.Identity.Name);
+            var user = await userManager.FindByNameAsync(userName);
 
             if (user == null || user.RefreshToken == null || user.RefreshToken != requestDTO.RefreshToken || user.RefreshTokenExpiry < DateTime.UtcNow)
             {
@@ -103,7 +108,7 @@ namespace Events.Application.Services.AccountService.Implementations
                 throw new ValidationException(validateResult.Errors);
             }
 
-            var user = new User()
+            var user = new MemberDb()
             {
                 Email = requestDTO.Email,
                 UserName = requestDTO.UserName,
@@ -122,20 +127,27 @@ namespace Events.Application.Services.AccountService.Implementations
             return response;
         }
 
-        private async Task<LogInResoponseDTO> GenerateLogInResponse(User user)
+        public async Task DeleteUser(string userName)
         {
-            var response = new LogInResoponseDTO()
+            var user = await userManager.FindByNameAsync(userName) ?? throw new ItemNotFoundException("User");
+
+            await userManager.DeleteAsync(user);
+        }
+
+        public async Task AddAdmin(string password)
+        {
+            var admin = await userManager.FindByNameAsync("Admin");
+
+            if (admin is null)
             {
-                IsLogedIn = true,
-                JwtToken = GenerateTokenString(user.UserName),
-                RefreshToken = GenerateRefreshToken()
-            };
-
-            user.RefreshToken = response.RefreshToken;
-            user.RefreshTokenExpiry = DateTime.UtcNow.AddHours(12);
-            await userManager.UpdateAsync(user);
-
-            return response;
+                var adminUser = new MemberDb()
+                {
+                    Email = "admin@gmail.com",
+                    UserName = "Admin"
+                };
+                await userManager.CreateAsync(adminUser, password);
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
         }
 
         private ClaimsPrincipal GetTokenPrincipal(string jwtToken)
@@ -154,22 +166,21 @@ namespace Events.Application.Services.AccountService.Implementations
             return new JwtSecurityTokenHandler().ValidateToken(jwtToken, validation, out _);
         }
 
-        private string GenerateTokenString(string userName)
+        private async Task<LogInResoponseDTO> GenerateLogInResponse(MemberDb member)
         {
-            var claims = new List<Claim>
+            var role = (await userManager.GetRolesAsync(member)).First();
+            var response = new LogInResoponseDTO()
             {
-                new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.Role, "User")
+                IsLogedIn = true,
+                JwtToken = GenerateTokenString(member.UserName, role),
+                RefreshToken = GenerateRefreshToken()
             };
 
-            var staticKey = configuration.GetSection("Jwt:Key").Value;
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(staticKey));
-            var signingCard = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
+            member.RefreshToken = response.RefreshToken;
+            member.RefreshTokenExpiry = DateTime.UtcNow.AddHours(12);
+            await userManager.UpdateAsync(member);
 
-            var securityToken = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddSeconds(60), signingCredentials: signingCard);
-
-            return new JwtSecurityTokenHandler().WriteToken(securityToken);
-
+            return response;
         }
 
         private string GenerateRefreshToken()
@@ -184,16 +195,21 @@ namespace Events.Application.Services.AccountService.Implementations
             return Convert.ToBase64String(randomNumber);
         }
 
-        public async Task DeleteUser(string userName)
+        private string GenerateTokenString(string userName, string role)
         {
-            var user = await userManager.FindByNameAsync(userName);
-
-            if (user == null)
+            var claims = new List<Claim>
             {
-                throw new ItemNotFoundException("User");
-            }
+                new Claim(ClaimTypes.Name, userName),
+                new Claim(ClaimTypes.Role, role)
+            };
 
-            await userManager.DeleteAsync(user);
+            var staticKey = configuration.GetSection("Jwt:Key").Value;
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(staticKey));
+            var signingCard = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
+
+            var securityToken = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(15), signingCredentials: signingCard);
+
+            return new JwtSecurityTokenHandler().WriteToken(securityToken);
         }
     }
 }

@@ -26,10 +26,12 @@ public class BindingFilter : IActionFilter
     private string GetErrorMessage(IEnumerable<ModelError> errors)
     {
         string message = "";
+
         foreach (var error in errors)
         {
             message = string.Concat(message, error.ErrorMessage);
         }
+
         return message;
     }
 }

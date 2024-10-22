@@ -1,18 +1,22 @@
 ﻿using Events.Application.Models.Account;
-using Events.Domain.Entities;
+using Events.Infrastructure.Entities;
 using System.Security.Claims;
 
 namespace Events.Application.Services.Account;
 
 public interface IAccountService
 {
+    Task AddAdmin(string password);
+
     Task<LogInResoponseDTO> RegisterUserAndSignIn(RegisterRequestDTO requestDTO);
 
     Task<LogInResoponseDTO> LogIn(LogInRequestDTO requestDTO);
 
     Task<LogInResoponseDTO> LogOut(ClaimsPrincipal claims);
 
-    Task<User?> GetUser(ClaimsPrincipal claims);
+    Task<LogInResoponseDTO> IsLogIn(string accessToken, string userName);
+
+    Task<MemberDb?> GetUser(ClaimsPrincipal claims);
 
     Task<LogInResoponseDTO> RefreshToken(RefreshTokenRequestDTO requestDTO);
 

@@ -26,11 +26,6 @@ public class RegisteredAccountController : Controller
     {
         var user = await accountService.GetUser(User);
 
-        if (user == null)
-        {
-            return NotFound();
-        }
-
         return Ok(user.UserName);
     }
 
@@ -40,14 +35,8 @@ public class RegisteredAccountController : Controller
     public async Task<IActionResult> Add([FromBody] RegisterRequestDTO requestDTO)
     {
         var loginResult = await accountService.RegisterUserAndSignIn(requestDTO);
+        cookieService.SetAuthorizationCookies(loginResult);
 
-        if (loginResult.IsLogedIn)
-        {
-            cookieService.SetAuthorizationCookies(loginResult);
-
-            return Ok(loginResult);
-        }
-
-        return Ok();
+        return Ok(loginResult);
     }
 }

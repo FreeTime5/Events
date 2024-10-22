@@ -4,11 +4,11 @@ namespace Events.Api.ApiServices.CookieService;
 
 public interface ICookieService
 {
-    void SetAuthorizationCookies(LogInResoponseDTO loginResponse);
+    void SetAuthorizationCookies(LogInResoponseDTO jwtToken);
 
     bool CheckAuthorizatoinCokies();
 
     void DeleteAuthorizationCookies();
 
-    Tokens GetAuthorizatoinCookies();
+    RefreshTokenRequestDTO? GetAuthorizatoinCookies();
 }

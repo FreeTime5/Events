@@ -1,10 +1,6 @@
 using Events.Api.Extensions;
 using Events.Api.Filters;
 using Events.Application.Extensions;
-using Events.Domain.Entities;
-using Events.Infrastructure;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,7 +39,7 @@ app.ApplyMigrations();
 
 await app.UseDevelopment();
 
-
+await app.CreateAdmin();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

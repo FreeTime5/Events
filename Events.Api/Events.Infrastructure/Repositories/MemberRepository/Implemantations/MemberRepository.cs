@@ -1,5 +1,4 @@
-﻿using Events.Domain.Entities;
-using Events.Domain.Exceptions;
+﻿using Events.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Events.Infrastructure.Repositories.MemberRepository.Implemantations;
@@ -13,84 +12,27 @@ internal class MemberRepository : IMemberRepository
         this.dbContext = dbContext;
     }
 
-    public async Task AddToEvent(string memberId, string eventId)
+    public IQueryable<MemberDb> GetAllFromEvent(EventDb eventEntity)
     {
-        var eventEntity = await dbContext.Events.FindAsync(eventId);
-        var member = await dbContext.Users.FindAsync(memberId);
-
-        if (eventEntity == null)
-        {
-            throw new ItemNotFoundException("Event");
-        }
-        if (member == null)
-        {
-            throw new ItemNotFoundException("User");
-        }
-
-        var check = await dbContext.Registrations.Where(r => r.Event.Id == eventId && r.User.Id == memberId).FirstOrDefaultAsync();
-        if (check != null)
-        {
-            throw new InvalidOperationException("This user is already a member of the event");
-        }
-
-        dbContext.Registrations.Add(new Registration()
-        {
-            Event = eventEntity,
-            User = member,
-            RegistrationDate = DateTime.UtcNow
-        });
-        await dbContext.SaveChangesAsync();
-    }
-
-    public async Task<IQueryable<User>> GetAllFromEvent(string eventId)
-    {
-        var eventEntity = await dbContext.Events.FindAsync(eventId);
-
-        if (eventEntity == null)
-        {
-            throw new ItemNotFoundException("Event");
-        }
-
-        var members = dbContext.Registrations.Where(r => r.Event.Id == eventId)
-            .Include(r => r.User)
-            .Select(r => r.User);
+        var members = dbContext.Registrations.Where(r => r.Event.Id == eventEntity.Id)
+            .Select(r => r.Member);
 
         return members;
     }
 
-    public async Task<User?> GetById(string id)
+    public async Task<MemberDb?> GetById(string id)
     {
-        var user = await dbContext.Users.FindAsync(id);
-
-        return user;
+        return await dbContext.Users.FindAsync(id);
     }
 
-    public async Task Update(User user)
+    public async Task Update(MemberDb member)
     {
-        var userEntity = await dbContext.Users.FindAsync(user.Id);
-
-        if (userEntity == null)
-        {
-            throw new ItemNotFoundException("User");
-        }
-
-        userEntity.FirstName = user.FirstName;
-        userEntity.LastName = user.LastName;
-        userEntity.Birthday = user.Birthday;
-
+        dbContext.Update(member);
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task RemoveFromEvent(string memberId, string evId)
+    public async Task<MemberDb?> GetByName(string userName)
     {
-        var registration = await dbContext.Registrations.Where(r => r.Event.Id == evId && r.User.Id == memberId).FirstOrDefaultAsync();
-
-        if (registration == null)
-        {
-            throw new ItemNotFoundException("Registration");
-        }
-
-        dbContext.Registrations.Remove(registration);
-        await dbContext.SaveChangesAsync();
+        return await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == userName);
     }
 }
