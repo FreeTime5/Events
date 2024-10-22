@@ -1,16 +1,16 @@
-﻿using Events.Infrastructure.Entities;
+﻿using Events.Domain.Entities;
 
 namespace Events.Infrastructure.Repositories.CategoryRepository;
 
 public interface ICategoryRepository
 {
-    public Task Add(CategoryDb category);
+    public Task Add(string name);
 
-    public Task Delete(CategoryDb category);
+    public Task Delete(string name);
 
-    public IEnumerable<CategoryDb> GetAll();
+    public Task<IEnumerable<Category>> GetAll();
 
-    public Task<CategoryDb?> GetById(string id);
+    public Task<Category?> GetById(string id);
 
-    public Task<CategoryDb?> GetByName(string name);
+    public Task<Category?> GetByName(string name);
 }

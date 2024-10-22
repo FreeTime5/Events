@@ -1,4 +1,4 @@
-﻿using Events.Application.Exceptions;
+﻿using Events.Domain.Exceptions;
 using Events.Domain.Shared;
 using FluentValidation;
 using System.Net;
@@ -42,22 +42,7 @@ namespace Events.Api.Middlewares
             {
                 await HandleExceptionAsync(context, ex.Message, HttpStatusCode.Unauthorized, ex.Message);
             }
-            catch (AuthorizationException ex)
-            {
-                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.Unauthorized, ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.BadRequest, ex.Message);
-            }
-            catch (InvalidDataException ex)
-            {
-                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.BadRequest, ex.Message);
-            }
-            catch (Exception ex)
-            {
-                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.InternalServerError, ex.Message);
-            }
+
         }
 
         private async Task HandleExceptionAsync(HttpContext context, string logMessage, HttpStatusCode statusCode, string message)
@@ -69,7 +54,11 @@ namespace Events.Api.Middlewares
             response.ContentType = "application/json";
             response.StatusCode = (int)statusCode;
 
-            await response.WriteAsJsonAsync(new Error(message).ToString());
+            var error = new Error(message, (int)statusCode);
+
+            var result = error.ToString();
+
+            await response.WriteAsJsonAsync(result);
         }
 
     }

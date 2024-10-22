@@ -28,21 +28,20 @@ internal class CookieService : ICookieService
         responseCookies.Delete(refreshTokenCookieName);
     }
 
-    public void SetAuthorizationCookies(LogInResoponseDTO resoponseDTO)
+    public void SetAuthorizationCookies(LogInResoponseDTO loginResponse)
     {
-        responseCookies.Append(authorizatoinCookieName, resoponseDTO.JwtToken);
-        responseCookies.Append(refreshTokenCookieName, resoponseDTO.RefreshToken);
-
+        responseCookies.Append(authorizatoinCookieName, loginResponse.JwtToken);
+        responseCookies.Append(refreshTokenCookieName, loginResponse.RefreshToken);
     }
 
-    public RefreshTokenRequestDTO? GetAuthorizatoinCookies()
+    public Tokens GetAuthorizatoinCookies()
     {
         if (!CheckAuthorizatoinCokies())
         {
-            return null;
+            return new Tokens();
         }
 
-        return new RefreshTokenRequestDTO()
+        return new Tokens()
         {
             JwtToken = requestCookies[authorizatoinCookieName],
             RefreshToken = requestCookies[refreshTokenCookieName]

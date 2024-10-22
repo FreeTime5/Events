@@ -1,17 +1,16 @@
-﻿using Events.Infrastructure.Entities;
-using System.Security.Claims;
+﻿using Events.Domain.Entities;
 
 namespace Events.Application.Services.CategoryService;
 
 public interface ICategoryService
 {
-    Task AddCategory(string name, ClaimsPrincipal claims);
+    Task AddCategory(string name, User user);
 
-    Task DeleteCategory(string name, ClaimsPrincipal claims);
+    Task DeleteCategory(string name, User user);
 
-    IEnumerable<CategoryDb> GetAllCategories();
+    Task<IEnumerable<Category>> GetAllCategories();
 
-    Task<CategoryDb> GetCategoryById(string id);
+    Task<Category> GetCategoryById(string id);
 
-    Task<CategoryDb> GetCategoryByName(string name);
+    Task<Category> GetCategoryByName(string name);
 }

@@ -52,7 +52,6 @@ public static class ExtensionMethods
     public static IServiceCollection AddImageService(this IServiceCollection services, string defaultImagePath, string imageFolder)
     {
         services.AddSingleton<IImageService, ImageService>(provider => new ImageService(defaultImagePath, imageFolder));
-
         return services;
     }
 }

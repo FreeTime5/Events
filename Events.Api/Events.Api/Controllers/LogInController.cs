@@ -31,36 +31,42 @@ namespace Events.Api.Controllers
             return Ok(response);
         }
 
-        [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> IsLoginAsync()
-        {
-            var accessToken = HttpContext.Request.Headers["Authorization"].FirstOrDefault() ?? cookieService.GetAuthorizatoinCookies().JwtToken;
-            var response = await accountService.IsLogIn(accessToken!, User.Identity!.Name!);
-
-            return Ok(response);
-        }
-
         [HttpPost]
         [ServiceFilter(typeof(BindingFilter))]
-        public async Task<IActionResult> Login([FromBody] LogInRequestDTO requestDTO)
+        public async Task<IActionResult> LogIn([FromBody] LogInRequestDTO requestDTO)
         {
             var loginResult = await accountService.LogIn(requestDTO);
-            cookieService.SetAuthorizationCookies(loginResult);
 
-            return Ok(loginResult);
+            if (loginResult.IsLogedIn)
+            {
+                cookieService.SetAuthorizationCookies(loginResult);
+
+                return Ok(loginResult);
+            }
+
+            return Unauthorized();
         }
+
 
         [HttpPut]
         [Route("[action]")]
         [ServiceFilter(typeof(BindingFilter))]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO requestDTO)
+        public async Task<IActionResult> RefreshToken()
         {
-            requestDTO = cookieService.GetAuthorizatoinCookies() ?? requestDTO;
-            var loginResult = await accountService.RefreshToken(requestDTO);
-            cookieService.SetAuthorizationCookies(loginResult);
+            var tokens = cookieService.GetAuthorizatoinCookies();
 
-            return Ok(loginResult);
+            var requestDTO = new RefreshTokenRequestDTO() { JwtToken = tokens.JwtToken, RefreshToken = tokens.RefreshToken };
+
+            var loginResult = await accountService.RefreshToken(requestDTO);
+
+            if (loginResult.IsLogedIn)
+            {
+                cookieService.SetAuthorizationCookies(loginResult);
+
+                return Ok(loginResult);
+            }
+
+            return Unauthorized();
         }
     }
 }

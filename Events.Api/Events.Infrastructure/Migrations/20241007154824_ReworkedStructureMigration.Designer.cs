@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Events.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241022181541_initial")]
-    partial class initial
+    [Migration("20241007154824_ReworkedStructureMigration")]
+    partial class ReworkedStructureMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,10 +25,9 @@ namespace Events.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Events.Infrastructure.Entities.CategoryDb", b =>
+            modelBuilder.Entity("Events.Domain.Entities.Category", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
@@ -41,10 +40,9 @@ namespace Events.Infrastructure.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("Events.Infrastructure.Entities.EventDb", b =>
+            modelBuilder.Entity("Events.Domain.Entities.Event", b =>
                 {
                     b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CategoryId")
@@ -61,10 +59,6 @@ namespace Events.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<string>("ImageName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ImageUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -75,9 +69,6 @@ namespace Events.Infrastructure.Migrations
                     b.Property<string>("Place")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("RegistrationsCount")
-                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -93,7 +84,32 @@ namespace Events.Infrastructure.Migrations
                     b.ToTable("Events");
                 });
 
-            modelBuilder.Entity("Events.Infrastructure.Entities.MemberDb", b =>
+            modelBuilder.Entity("Events.Domain.Entities.Registration", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("EventId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("RegistrationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Registrations");
+                });
+
+            modelBuilder.Entity("Events.Domain.Entities.User", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -148,12 +164,6 @@ namespace Events.Infrastructure.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("RefreshTokenExpiry")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -175,32 +185,6 @@ namespace Events.Infrastructure.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers", (string)null);
-                });
-
-            modelBuilder.Entity("Events.Infrastructure.Entities.RegistrationDb", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("EventId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("MemberId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("RegistrationDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EventId");
-
-                    b.HasIndex("MemberId");
-
-                    b.ToTable("Registrations");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -336,13 +320,13 @@ namespace Events.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Events.Infrastructure.Entities.EventDb", b =>
+            modelBuilder.Entity("Events.Domain.Entities.Event", b =>
                 {
-                    b.HasOne("Events.Infrastructure.Entities.CategoryDb", "Category")
+                    b.HasOne("Events.Domain.Entities.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId");
 
-                    b.HasOne("Events.Infrastructure.Entities.MemberDb", "Creator")
+                    b.HasOne("Events.Domain.Entities.User", "Creator")
                         .WithMany()
                         .HasForeignKey("CreatorId");
 
@@ -351,23 +335,23 @@ namespace Events.Infrastructure.Migrations
                     b.Navigation("Creator");
                 });
 
-            modelBuilder.Entity("Events.Infrastructure.Entities.RegistrationDb", b =>
+            modelBuilder.Entity("Events.Domain.Entities.Registration", b =>
                 {
-                    b.HasOne("Events.Infrastructure.Entities.EventDb", "Event")
+                    b.HasOne("Events.Domain.Entities.Event", "Event")
                         .WithMany("Registrations")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Events.Infrastructure.Entities.MemberDb", "Member")
+                    b.HasOne("Events.Domain.Entities.User", "User")
                         .WithMany("Registrations")
-                        .HasForeignKey("MemberId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Event");
 
-                    b.Navigation("Member");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -381,7 +365,7 @@ namespace Events.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Events.Infrastructure.Entities.MemberDb", null)
+                    b.HasOne("Events.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -390,7 +374,7 @@ namespace Events.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Events.Infrastructure.Entities.MemberDb", null)
+                    b.HasOne("Events.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -405,7 +389,7 @@ namespace Events.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Events.Infrastructure.Entities.MemberDb", null)
+                    b.HasOne("Events.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -414,19 +398,19 @@ namespace Events.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Events.Infrastructure.Entities.MemberDb", null)
+                    b.HasOne("Events.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Events.Infrastructure.Entities.EventDb", b =>
+            modelBuilder.Entity("Events.Domain.Entities.Event", b =>
                 {
                     b.Navigation("Registrations");
                 });
 
-            modelBuilder.Entity("Events.Infrastructure.Entities.MemberDb", b =>
+            modelBuilder.Entity("Events.Domain.Entities.User", b =>
                 {
                     b.Navigation("Registrations");
                 });

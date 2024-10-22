@@ -1,13 +1,10 @@
 ﻿using Events.Application.Models.Event;
 using FluentValidation;
-using System.Text.RegularExpressions;
 
 namespace Events.Application.Validators.Event
 {
     internal class CreateEventRequestValidator : AbstractValidator<CreateEventRequestDTO>
     {
-        private const string GUIDREGEX = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$";
-
         public CreateEventRequestValidator()
         {
             RuleFor(requestEvent => requestEvent.Title)
@@ -19,13 +16,12 @@ namespace Events.Application.Validators.Event
                 .NotEmpty()
                 .When(requestEvent => requestEvent.Image != null);
             RuleFor(requestEvent => requestEvent.MaxMembers)
-                .GreaterThan(1)
-                .WithMessage("Event must be at least with 2 members");
+                .GreaterThan(5)
+                .WithMessage("Event must be at least with 5 members");
             RuleFor(requestEvent => requestEvent.Place)
                 .NotEmpty();
             RuleFor(requestEvent => requestEvent.CategoryId)
                 .NotEmpty()
-                .Must(c => Regex.IsMatch(c, GUIDREGEX))
                 .When(requestEvent => requestEvent.CategoryId != null);
             RuleFor(requestEvent => requestEvent.Date)
                 .GreaterThan(DateTime.UtcNow.AddDays(1))

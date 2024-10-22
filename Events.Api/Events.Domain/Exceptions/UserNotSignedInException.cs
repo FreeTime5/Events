@@ -1,10 +1,9 @@
-﻿
-namespace Events.Application.Exceptions;
+﻿namespace Events.Domain.Exceptions;
 
 public class UserNotSignedInException : Exception
 {
     public UserNotSignedInException()
-        : base("User not signed in")
+        : base("User not sign in")
     {
     }
 }

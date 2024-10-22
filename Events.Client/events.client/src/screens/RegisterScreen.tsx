@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Pages, RegisterDTO, serverUrl, User } from "../constants";
+import { RegisterDTO, serverUrl, User } from "../constants";
 import axios from "axios";
 import {
   Card,
@@ -10,21 +10,15 @@ import {
   Text,
 } from "@chakra-ui/react";
 
-function RegisterScreen({
-  user,
-  setUser,
-  setPage,
-}: {
-  user: User;
-  setUser: (user: User) => void;
-  setPage: (page: Pages) => void;
-}) {
+function RegisterScreen({ user }: { user: User }) {
   const [email, setEmail] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const handleShowPasswordClick = () => setShowPassword(!showPassword);
+
+  const [loginResponseDto, setLoginResponseDto] = useState(null);
 
   const registrationRequestDto = useMemo<RegisterDTO>(() => {
     return {
@@ -39,11 +33,7 @@ function RegisterScreen({
       .post(`${serverUrl}/RegisteredAccount/Add`, registrationRequestDto)
       .then((response) => {
         if (response.status === 200) {
-          user = response.data as User;
-          if (user != null) {
-            setUser(user);
-            setPage(Pages.home);
-          }
+          user = JSON.parse(response.data);
         }
       });
   }, [registrationRequestDto]);
@@ -53,27 +43,18 @@ function RegisterScreen({
       <InputGroup size="md">
         <Input
           placeholder="Username"
-          onInput={(e: React.FormEvent<HTMLInputElement>) =>
-            setUserName(e.currentTarget.value)
-          }
+          onInput={(e) => setUserName(e.target.value)}
         />
       </InputGroup>
       <InputGroup size="md">
-        <Input
-          placeholder="Email"
-          onInput={(e: React.FormEvent<HTMLInputElement>) =>
-            setEmail(e.currentTarget.value)
-          }
-        />
+        <Input placeholder="Email" onInput={(e) => setEmail(e.target.value)} />
       </InputGroup>
       <InputGroup size="md">
         <Input
           pr="4.5rem"
           type={showPassword ? "text" : "password"}
           placeholder="Enter password"
-          onInput={(e: React.FormEvent<HTMLInputElement>) =>
-            setPassword(e.currentTarget.value)
-          }
+          onInput={(e) => setPassword(e.target.value)}
         />
         <InputRightElement width="4.5rem">
           <Button h="1.75rem" size="sm" onClick={handleShowPasswordClick}>

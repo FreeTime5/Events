@@ -1,32 +1,23 @@
 ﻿using Events.Api.ApiServices.CookieService;
 using Events.Api.ApiServices.CookieService.Implementations;
-using Events.Api.ApiServices.EmailService;
 using Events.Api.ApiServices.EmailService.Implementations;
+using Events.Api.ApiServices.EmailService;
 using Events.Api.Middlewares;
 using Events.Application.Extensions;
-using Events.Application.Services.Account;
-using Events.Infrastructure;
-using Events.Infrastructure.Entities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Events.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Events.Domain.Entities;
 
 namespace Events.Api.Extensions;
 
 public static class AppExtensions
 {
-    public static async Task CreateAdmin(this WebApplication app)
-    {
-        using (var scope = app.Services.CreateScope())
-        {
-            var accountService = scope.ServiceProvider.GetRequiredService<IAccountService>();
-            await accountService.AddAdmin(app.Configuration.GetValue<string>("Admin:Password"));
-        }
-    }
 
     public static async Task UseDevelopment(this WebApplication app)
     {
@@ -58,7 +49,7 @@ public static class AppExtensions
 
     public static IServiceCollection AddAppIdentity(this IServiceCollection services)
     {
-        services.AddIdentity<MemberDb, IdentityRole>(options =>
+        services.AddIdentity<User, IdentityRole>(options =>
         {
             options.Password.RequiredLength = 6;
             options.Password.RequireNonAlphanumeric = false;
@@ -73,7 +64,6 @@ public static class AppExtensions
     {
         var imageFolder = Path.Combine(builder.Environment.ContentRootPath, "wwwroot\\EventImages");
         builder.Services.AddImageService(Path.Combine(imageFolder, "default_image.jpg"), imageFolder);
-
         return builder.Services;
     }
 
@@ -96,7 +86,6 @@ public static class AppExtensions
                 OnMessageReceived = context =>
                 {
                     context.Token = context.Request.Cookies["Authorization"];
-
                     return Task.CompletedTask;
                 }
             };
@@ -123,7 +112,6 @@ public static class AppExtensions
         services.AddCors(options => options.AddPolicy("ClientApp", policy =>
         {
             policy.WithOrigins(configuration.GetValue<string>("ClientAppUrl")!)
-                .AllowCredentials()
                 .AllowAnyMethod()
                 .AllowAnyHeader();
         }));
@@ -155,7 +143,6 @@ public static class AppExtensions
         var serverHost = configuration.GetValue<string>("EmailInformation:ServerHost");
 
         services.AddTransient<IEmailService, EmailService>(provider => new EmailService(email, password, serverHost));
-
         return services;
     }
 
@@ -166,7 +153,6 @@ public static class AppExtensions
             var services = scope.ServiceProvider;
 
             var context = services.GetRequiredService<ApplicationDbContext>();
-
             if (context.Database.GetPendingMigrations().Any())
             {
                 context.Database.Migrate();

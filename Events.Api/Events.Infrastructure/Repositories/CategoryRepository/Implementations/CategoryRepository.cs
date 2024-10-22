@@ -1,4 +1,5 @@
-﻿using Events.Infrastructure.Entities;
+﻿using Events.Domain.Entities;
+using Events.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Events.Infrastructure.Repositories.CategoryRepository.Implementations;
@@ -12,30 +13,47 @@ internal class CategoryRepository : ICategoryRepository
         this.dbContext = dbContext;
     }
 
-    public async Task Add(CategoryDb category)
+    public async Task Add(string name)
     {
+        if (await GetByName(name) != null)
+        {
+            throw new ItemAlreadyAddedException("Category");
+        }
+
+        var category = new Category() { Name = name };
         dbContext.Categories.Add(category);
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task Delete(CategoryDb category)
+    public async Task Delete(string name)
     {
+        var category = await GetByName(name);
+
+        if (category == null)
+            throw new ItemNotFoundException("Category");
+
         dbContext.Categories.Remove(category);
         await dbContext.SaveChangesAsync();
     }
 
-    public IEnumerable<CategoryDb> GetAll()
+    public async Task<IEnumerable<Category>> GetAll()
     {
-        return dbContext.Categories;
+        return await dbContext.Categories.ToListAsync();
     }
 
-    public async Task<CategoryDb?> GetById(string id)
+    public async Task<Category?> GetById(string id)
     {
         return await dbContext.Categories.FindAsync(id);
     }
 
-    public async Task<CategoryDb?> GetByName(string name)
+    public async Task<Category?> GetByName(string name)
     {
-        return await dbContext.Categories.FirstOrDefaultAsync(c => c.Name == name);
+        if (string.IsNullOrEmpty(name))
+            return null;
+
+        var category = await dbContext.Categories.Where(c => c.Name == name)
+            .FirstOrDefaultAsync();
+
+        return category;
     }
 }

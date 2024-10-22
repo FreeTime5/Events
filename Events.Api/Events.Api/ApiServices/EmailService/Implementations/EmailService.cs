@@ -1,6 +1,5 @@
-﻿using Events.Application.Models.Event;
+﻿using System.Net.Mail;
 using System.Net;
-using System.Net.Mail;
 
 namespace Events.Api.ApiServices.EmailService.Implementations;
 
@@ -17,25 +16,16 @@ internal class EmailService : IEmailService
         this.serverHost = serverHost;
     }
 
-    public async Task SendEmail(IEnumerable<GetAllUsersResponseDTO> users, string subject, string message)
+    public async Task SendEmail(string email, string subject, string message)
     {
-        foreach (var userDto in users)
+        var client = new SmtpClient(serverHost, 587)
         {
-            var email = userDto.Email;
-            if (string.IsNullOrEmpty(email))
-            {
-                return;
-            }
+            UseDefaultCredentials = false,
+            EnableSsl = true,
+            Credentials = new NetworkCredential(mail, password)
+        };
 
-            var client = new SmtpClient(serverHost, 587)
-            {
-                UseDefaultCredentials = false,
-                EnableSsl = true,
-                Credentials = new NetworkCredential(mail, password)
-            };
-
-            await client.SendMailAsync(new MailMessage(from: mail, to: email, subject, message));
-        }
+        await client.SendMailAsync(new MailMessage(from: mail, to: email, subject, message));
     }
 
 
