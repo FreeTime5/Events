@@ -1,4 +1,4 @@
-﻿using Events.Domain.Entities;
+﻿using Events.Infrastructure.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace Events.Infrastructure;
 
-public class ApplicationDbContext : IdentityDbContext<User>
+public class ApplicationDbContext : IdentityDbContext<MemberDb>
 {
-    public DbSet<Event> Events { get; set; }
-    public DbSet<Category> Categories { get; set; }
-    public DbSet<Registration> Registrations { get; set; }
+    public DbSet<EventDb> Events { get; set; }
+    public DbSet<CategoryDb> Categories { get; set; }
+    public DbSet<RegistrationDb> Registrations { get; set; }
 
     public ApplicationDbContext(DbContextOptions options) : base(options)
     {
@@ -20,8 +20,9 @@ public class ApplicationDbContext : IdentityDbContext<User>
     {
         base.OnModelCreating(modelBuilder);
 
-        var eventBuilder = modelBuilder.Entity<Event>(entity =>
+        var eventBuilder = modelBuilder.Entity<EventDb>(entity =>
         {
+            entity.ToTable("Events");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id)
                 .HasValueGenerator<GuidValueGenerator>()
@@ -47,12 +48,16 @@ public class ApplicationDbContext : IdentityDbContext<User>
                 .HasMaxLength(100);
             entity.Property(e => e.ImageUrl)
                 .IsRequired();
+            entity.Property(e => e.ImageName)
+                .IsRequired();
             entity.Property(e => e.Describtion)
                 .HasMaxLength(255);
         });
 
-        var categoriesBuilder = modelBuilder.Entity<Category>(entity =>
+        var categoriesBuilder = modelBuilder.Entity<CategoryDb>(entity =>
         {
+            entity.ToTable("Categories");
+
             entity.HasKey(c => c.Id);
 
             entity.Property(e => e.Id)
@@ -63,11 +68,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
                 .HasMaxLength(100);
         });
 
-        modelBuilder.Entity<User>(entity =>
+        modelBuilder.Entity<MemberDb>(entity =>
         {
             entity.HasKey(u => u.Id);
             entity.HasMany(u => u.Registrations)
-                .WithOne(r => r.User);
+                .WithOne(r => r.Member);
 
             entity.Property(u => u.FirstName)
                 .HasMaxLength(100);
@@ -75,19 +80,20 @@ public class ApplicationDbContext : IdentityDbContext<User>
                 .HasMaxLength(100);
         });
 
-        modelBuilder.Entity<Registration>(entity =>
+        modelBuilder.Entity<RegistrationDb>(entity =>
         {
+            entity.ToTable("Registrations");
             entity.HasKey(r => r.Id);
-            entity.HasOne(r => r.User)
+            entity.HasOne(r => r.Member)
                 .WithMany(u => u.Registrations)
-                .HasForeignKey(r => r.UserId)
+                .HasForeignKey(r => r.MemberId)
                 .HasPrincipalKey(u => u.Id);
             entity.HasOne(r => r.Event)
                 .WithMany(e => e.Registrations)
                 .HasForeignKey(r => r.EventId)
                 .HasPrincipalKey(e => e.Id);
 
-            entity.Navigation(r => r.User)
+            entity.Navigation(r => r.Member)
                 .AutoInclude();
             entity.Navigation(r => r.Event)
                 .AutoInclude();

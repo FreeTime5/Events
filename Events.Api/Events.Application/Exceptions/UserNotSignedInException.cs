@@ -1,4 +1,5 @@
-﻿namespace Events.Domain.Exceptions;
+﻿
+namespace Events.Application.Exceptions;
 
 public class UserNotSignedInException : Exception
 {

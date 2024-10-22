@@ -34,6 +34,11 @@ internal class ImageService : IImageService
         return Path.Combine(imageFolder, Guid.NewGuid().ToString() + "_" + formFile.FileName);
     }
 
+    public string GetImageName(string imagePath)
+    {
+        return imagePath.Split('\\').Last();
+    }
+
     public async Task UpdateImage(string previousImagePath, string imagePath, IFormFile? formFile)
     {
         if (previousImagePath != defaultImagePath)

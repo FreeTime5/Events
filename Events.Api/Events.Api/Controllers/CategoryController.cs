@@ -1,9 +1,6 @@
 ﻿using Events.Api.Filters;
 using Events.Application.Services.CategoryService;
-using Events.Domain.Entities;
-using Events.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Events.Api.Controllers
@@ -14,27 +11,17 @@ namespace Events.Api.Controllers
     public class CategoryController : Controller
     {
         private readonly ICategoryService categoryService;
-        private readonly UserManager<User> userManager;
 
-        public CategoryController(ICategoryService categoryService, UserManager<User> userManager)
+        public CategoryController(ICategoryService categoryService)
         {
             this.categoryService = categoryService;
-            this.userManager = userManager;
         }
 
         [HttpPost]
         [ServiceFilter(typeof(BindingFilter))]
         public async Task<IActionResult> Add([FromBody] string name)
         {
-            var user = await userManager.GetUserAsync(User);
-
-            if (user == null)
-            {
-                throw new ItemNotFoundException("User");
-            }
-
-            await categoryService.AddCategory(name, user);
-
+            await categoryService.AddCategory(name, User);
             return Ok();
         }
 
@@ -42,14 +29,7 @@ namespace Events.Api.Controllers
         [ServiceFilter(typeof(BindingFilter))]
         public async Task<IActionResult> Delete([FromBody] string name)
         {
-            var user = await userManager.GetUserAsync(User);
-
-            if (user == null)
-            {
-                throw new ItemNotFoundException("User");
-            }
-
-            await categoryService.DeleteCategory(name, user);
+            await categoryService.DeleteCategory(name, User);
             return Ok();
         }
 

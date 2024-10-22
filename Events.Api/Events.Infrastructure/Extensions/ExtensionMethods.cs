@@ -4,6 +4,8 @@ using Events.Infrastructure.Repositories.EventRepository;
 using Events.Infrastructure.Repositories.EventRepository.Implementations;
 using Events.Infrastructure.Repositories.MemberRepository;
 using Events.Infrastructure.Repositories.MemberRepository.Implemantations;
+using Events.Infrastructure.Repositories.RegistrationRepository;
+using Events.Infrastructure.Repositories.RegistrationRepository.Implementations;
 using Events.Infrastructure.UnitOfWorkPattern;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +19,7 @@ public static class ExtensionMethods
         services.AddTransient<IEventRepository, EventRepository>();
         services.AddTransient<ICategoryRepository, CategoryRepository>();
         services.AddTransient<IMemberRepository, MemberRepository>();
+        services.AddTransient<IRegistrationRepository, RegistrationRepository>();
 
         return services;
     }

@@ -1,85 +1,28 @@
 ﻿using Events.Api.Filters;
 using Events.Application.Models.Member;
-using Events.Application.Services.Account;
 using Events.Application.Services.MemberService;
-using Events.Domain.Exceptions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Events.Api.Controllers;
-
-[Authorize]
-[ApiController]
-[Route("[controller]")]
-public class MemberController : Controller
+namespace Events.Api.Controllers
 {
-    private readonly IMemberService memberService;
-    private readonly IAccountService accountService;
-
-    public MemberController(IMemberService memberService, IAccountService accountService)
+    [ApiController]
+    [Route("[controller]")]
+    public class MemberController : Controller
     {
-        this.memberService = memberService;
-        this.accountService = accountService;
-    }
+        private readonly IMemberService memberService;
 
-    [HttpPost]
-    [ServiceFilter(typeof(BindingFilter))]
-    public async Task<IActionResult> RegisterOnEvent([FromBody] string eventId)
-    {
-        var currentUser = await accountService.GetUser(User);
-        if (currentUser == null)
+        public MemberController(IMemberService memberService)
         {
-            throw new ItemNotFoundException("User");
+            this.memberService = memberService;
         }
 
-        var requestDTO = new DeleteAndAddMemberRequestDTO()
+        [HttpPut]
+        [ServiceFilter(typeof(BindingFilter))]
+        public async Task<IActionResult> UpdateMember([FromBody] UpdateMemberDTO requestDTO)
         {
-            EventId = eventId,
-            MemberId = currentUser.Id
-        };
+            await memberService.UpdateMemberInformation(requestDTO, User.Identity.Name);
 
-        await memberService.AddMemberToEvent(requestDTO);
-
-        return Ok();
-    }
-
-    [HttpDelete]
-    [ServiceFilter(typeof(BindingFilter))]
-    public async Task<IActionResult> LeaveTheEvent([FromBody] string eventId)
-    {
-        var currentUser = await accountService.GetUser(User);
-        if (currentUser == null)
-        {
-            throw new ItemNotFoundException("User");
+            return Ok();
         }
-
-        var requestDTO = new DeleteAndAddMemberRequestDTO()
-        {
-            EventId = eventId,
-            MemberId = currentUser.Id
-        };
-
-        await memberService.DeleteMemberFromEvent(requestDTO);
-
-        return Ok();
-    }
-
-    [Route("List")]
-    [HttpGet]
-    [ServiceFilter(typeof(BindingFilter))]
-    public async Task<IActionResult> GetAllMembers([FromQuery] string eventId)
-    {
-        var members = await memberService.GetMembersOfEvent(eventId);
-
-        return Ok(members);
-    }
-
-    [HttpPut]
-    [ServiceFilter(typeof(BindingFilter))]
-    public async Task<IActionResult> UpdateMember([FromBody] UpdateMemberDTO requestDTO)
-    {
-        await memberService.UpdateMemberInformation(requestDTO);
-
-        return Ok();
     }
 }

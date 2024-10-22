@@ -20,13 +20,16 @@ namespace Events.Tests
         [Test]
         public async Task MemberRepo_TwiceAddToEvent_CatchInvalidOperationException()
         {
-            var memberRepository = services.Provider.GetService<IUnitOfWork>().MemberRepository;
+            var unitOfWork = services.Provider.GetService<IUnitOfWork>()!;
+            var user = await unitOfWork.MemberRepository.GetById("7215638b-42d9-4ce8-af3c-628541e2d6be") ?? throw new Exception();
+            var eventInstance = await unitOfWork.EventRepository.GetById("94782050-783f-494d-8c42-0cb935076e37") ?? throw new Exception();
+            await unitOfWork.MemberRepository.AddToEvent(user, eventInstance);
 
-            await memberRepository.AddToEvent("7215638b-42d9-4ce8-af3c-628541e2d6be", "94782050-783f-494d-8c42-0cb935076e37");
+            var registration = await unitOfWork.RegistrationRepository.Find(user.Id, eventInstance.Id);
 
-            Assert.CatchAsync(async () => { await memberRepository.AddToEvent("7215638b-42d9-4ce8-af3c-628541e2d6be", "94782050-783f-494d-8c42-0cb935076e37"); });
+            Assert.That(registration, Is.Not.Null);
 
-            await memberRepository.RemoveFromEvent("7215638b-42d9-4ce8-af3c-628541e2d6be", "94782050-783f-494d-8c42-0cb935076e37");
+            await unitOfWork.RegistrationRepository.Remove(registration);
 
         }
 

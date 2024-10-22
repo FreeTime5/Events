@@ -25,7 +25,7 @@ namespace Events.Tests
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("EventDatabase")));
 
-            builder.Services.AddIdentity<User, IdentityRole>(options =>
+            builder.Services.AddIdentity<Member, IdentityRole>(options =>
             {
                 options.Password.RequiredLength = 6;
                 options.Password.RequireNonAlphanumeric = false;

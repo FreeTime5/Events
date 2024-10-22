@@ -1,6 +1,8 @@
-﻿namespace Events.Api.ApiServices.EmailService;
+﻿using Events.Application.Models.Event;
+
+namespace Events.Api.ApiServices.EmailService;
 
 public interface IEmailService
 {
-    Task SendEmail(string email, string subject, string message);
+    Task SendEmail(IEnumerable<GetAllUsersResponseDTO> users, string subject, string message);
 }
