@@ -11,6 +11,7 @@ services:
       Jwt__Key: ${JWT_KEY}
       Jwt__Issuer: ${JWT_ISSUER}
       Jwt__Audince: ${JWT_AUDIECE}
+      Admin__Password: ${ADMIN_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
