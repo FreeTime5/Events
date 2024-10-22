@@ -1,6 +1,5 @@
 ﻿using Events.Application.Models.Account;
 using Events.Application.Services.Account;
-using Events.Infrastructure.Entities;
 using Events.Infrastructure.UnitOfWorkPattern;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
@@ -21,18 +20,13 @@ namespace Events.Tests
         [Test]
         public async Task MemberRepo_TwiceAddToEvent_CatchInvalidOperationException()
         {
-            var unitOfWork = services.Provider.GetService<IUnitOfWork>()!;
-            var user = await unitOfWork.MemberRepository.GetById("7215638b-42d9-4ce8-af3c-628541e2d6be") ?? throw new Exception();
-            var eventInstance = await unitOfWork.EventRepository.GetById("94782050-783f-494d-8c42-0cb935076e37") ?? throw new Exception();
-            var registration = new RegistrationDb() { Member = user, Event = eventInstance };
+            var memberRepository = services.Provider.GetService<IUnitOfWork>().MemberRepository;
 
-            await unitOfWork.RegistrationRepository.Add(registration);
+            await memberRepository.AddToEvent("7215638b-42d9-4ce8-af3c-628541e2d6be", "94782050-783f-494d-8c42-0cb935076e37");
 
-            var existedRegistration = await unitOfWork.RegistrationRepository.Find(user.Id, eventInstance.Id);
+            Assert.CatchAsync(async () => { await memberRepository.AddToEvent("7215638b-42d9-4ce8-af3c-628541e2d6be", "94782050-783f-494d-8c42-0cb935076e37"); });
 
-            Assert.That(existedRegistration, Is.Not.Null);
-
-            await unitOfWork.RegistrationRepository.Remove(existedRegistration);
+            await memberRepository.RemoveFromEvent("7215638b-42d9-4ce8-af3c-628541e2d6be", "94782050-783f-494d-8c42-0cb935076e37");
 
         }
 

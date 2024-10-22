@@ -12,6 +12,4 @@ public interface IImageService
     Task DeleteImage(string imagePath);
 
     Task UpdateImage(string previousImagePath, string imagePath, IFormFile? formFile);
-
-    string GetImageName(string imagePath);
 }

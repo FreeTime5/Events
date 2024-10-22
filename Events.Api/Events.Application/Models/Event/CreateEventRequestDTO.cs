@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
+
 namespace Events.Application.Models.Event;
 
 public class CreateEventRequestDTO
@@ -12,7 +13,7 @@ public class CreateEventRequestDTO
 
     public string Place { get; set; } = string.Empty;
 
-    public string? CategoryId { get; set; }
+    public int? CategoryId { get; set; }
 
     public int MaxMembers { get; set; }
 

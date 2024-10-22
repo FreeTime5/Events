@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Events.Application.Models.Event;
 using Events.Application.Models.Member;
-using Events.Infrastructure.Entities;
+using Events.Domain.Entities;
 
 namespace Events.Application.Services.AutoMapper;
 
@@ -9,8 +9,8 @@ internal class ApplicationProfile : Profile
 {
     public ApplicationProfile()
     {
-        CreateMap<MemberDb, GetMemberDTO>();
-        CreateMap<EventDb, GetEventsResponseDTO>();
-        CreateMap<CreateEventRequestDTO, EventDb>();
+        CreateMap<User, GetMemberDTO>();
+        CreateMap<Event, GetEventsResponseDTO>();
+        CreateMap<CreateEventRequestDTO, Event>();
     }
 }

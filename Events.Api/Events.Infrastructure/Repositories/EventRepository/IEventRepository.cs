@@ -1,20 +1,20 @@
-﻿using Events.Infrastructure.Entities;
+﻿using Events.Domain.Entities;
 
 namespace Events.Infrastructure.Repositories.EventRepository;
 
 public interface IEventRepository
 {
-    IQueryable<EventDb> GetAll();
+    IQueryable<Event> GetAll();
 
-    Task<EventDb?> GetById(string id);
+    Task<Event?> GetById(string id);
 
-    Task<EventDb?> GetByIdWithRegistrations(string id);
+    Task<Event?> GetByIdWithRegistrations(string id);
 
-    Task<EventDb?> GetByTitle(string title);
+    Task<Event?> GetByName(string name);
 
-    Task Add(EventDb ev);
+    Task<bool> Add(Event ev);
 
-    Task Update(EventDb ev);
+    Task Update(Event ev);
 
-    Task Delete(EventDb eventEntity);
+    Task Delete(string eventId);
 }

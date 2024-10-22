@@ -3,6 +3,8 @@ using Events.Api.Filters;
 using Events.Application.Models.Event;
 using Events.Application.Services.Account;
 using Events.Application.Services.EventService;
+using Events.Domain.Exceptions;
+using Events.Domain.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,7 +34,16 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public IActionResult Events([FromQuery] int page)
     {
+        if (page < 1)
+        {
+            return BadRequest(new Error("Invalid page", 400));
+        }
         var events = eventService.GetEventsWithPagination(page);
+
+        if (events.Count() == 0 && page != 1)
+        {
+            return BadRequest(new Error("Invalid page", 400));
+        }
 
         return Ok(events);
     }
@@ -41,7 +52,14 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> CreateEvents([FromForm] CreateEventRequestDTO requestDTO)
     {
-        await eventService.Create(requestDTO, User);
+        var user = await accoutService.GetUser(User);
+
+        if (user == null)
+        {
+            throw new ItemNotFoundException("User");
+        }
+
+        await eventService.Create(requestDTO, user);
 
         return Ok();
     }
@@ -50,7 +68,13 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> DeleteEvent([FromBody] string EventId)
     {
-        await eventService.DeleteEvent(EventId, User);
+        var user = await accoutService.GetUser(User);
+        if (user == null)
+        {
+            throw new ItemNotFoundException("User");
+        }
+
+        await eventService.DeleteEvent(EventId, user);
 
         return Ok();
     }
@@ -59,11 +83,24 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> UpdateEvent([FromForm] UpdateEventRequestDTO requestDTO)
     {
-        var subsInfo = await eventService.UpdateEvent(requestDTO, User);
-        await emailService.SendEmail(subsInfo, "Events", "Event was updated");
+        var user = await accoutService.GetUser(User);
+
+        await eventService.UpdateEvent(requestDTO, user);
+
+        var users = await eventService.GetAllUsersRegistredOnEvent(requestDTO.Id);
+
+        foreach (var userDto in users)
+        {
+            if (!string.IsNullOrEmpty(user.Email))
+            {
+                await emailService.SendEmail(user.Email, "Events", "Event was updated");
+            }
+        }
 
         return Ok();
     }
+
+
 
     [Route("Id")]
     [HttpGet]

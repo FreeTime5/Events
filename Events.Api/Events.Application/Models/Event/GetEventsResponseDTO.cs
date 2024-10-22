@@ -16,9 +16,9 @@ public class GetEventsResponseDTO
 
     public int MaxMembers { get; set; }
 
-    public int RegistrationsCount { get; set; }
+    public int RegistratinCount { get; set; }
 
-    public string ImageName { get; set; } = string.Empty;
+    public string? EventImageUrl { get; set; } = null;
 
     public string? CreatorName { get; set; }
 }
