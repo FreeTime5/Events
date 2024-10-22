@@ -42,6 +42,7 @@ internal class MemberService : IMemberService
     {
         var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
         var result = deleteAndAddValidator.Validate(new DeleteAndAddMemberRequestDTO() { EventId = eventId, MemberId = user.Id });
+
         if (!result.IsValid)
         {
             throw new ValidationException(result.Errors);
@@ -66,24 +67,31 @@ internal class MemberService : IMemberService
 
         var eventEntity = await unitOfWork.EventRepository.GetById(eventId) ?? throw new ItemNotFoundException("Event");
 
-        var registration = await unitOfWork.RegistrationRepository.Find(user.Id, eventEntity.Id);
-        if (registration != null)
+        var existedRegistration = await unitOfWork.RegistrationRepository.Find(user.Id, eventEntity.Id);
+
+        if (existedRegistration != null)
         {
             throw new InvalidOperationException("This user is already a member of the event");
         }
 
         var registrationResult = eventEntity.AddRegistration();
+
         if (!registrationResult)
         {
             throw new InvalidOperationException("Event has max number of members");
         }
 
-        await unitOfWork.MemberRepository.AddToEvent(user, eventEntity);
+        var registration = new RegistrationDb()
+        {
+            Member = user,
+            Event = eventEntity,
+            RegistrationDate = DateTime.UtcNow
+        };
+        await unitOfWork.RegistrationRepository.Add(registration);
     }
 
     public async Task UpdateMemberInformation(UpdateMemberDTO requestDTO, string userName)
     {
-
         var user = await unitOfWork.MemberRepository.GetByName(userName) ?? throw new ItemNotFoundException("User");
 
         user = UpdateUser(user, requestDTO);

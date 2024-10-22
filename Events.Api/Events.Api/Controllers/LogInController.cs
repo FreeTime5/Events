@@ -51,7 +51,6 @@ namespace Events.Api.Controllers
             return Ok(loginResult);
         }
 
-
         [HttpPut]
         [Route("[action]")]
         [ServiceFilter(typeof(BindingFilter))]

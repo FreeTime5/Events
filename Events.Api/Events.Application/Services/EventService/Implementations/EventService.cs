@@ -13,7 +13,12 @@ namespace Events.Application.Services.EventService.Implementations;
 
 internal class EventService : IEventService
 {
+    private const string PLACEFILTER = "place";
+    private const string MAXMEMBERSFILTER = "maxmembers";
+    private const string CATEGORYIDFILTER = "categoryid";
+    private const string CREATORIDFILTER = "creatorid";
     private const int EVENTSONPAGE = 8;
+
     private readonly IUnitOfWork unitOfWork;
     private readonly IImageService imageService;
     private readonly UserManager<MemberDb> userManager;
@@ -48,6 +53,7 @@ internal class EventService : IEventService
         var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
 
         var sameEvent = await unitOfWork.EventRepository.GetByTitle(eventRequestDTO.Title);
+
         if (sameEvent != null)
         {
             throw new ItemAlreadyAddedException("Event");
@@ -64,21 +70,13 @@ internal class EventService : IEventService
         await UploadImage(imagePath, eventRequestDTO.Image);
     }
 
-    private async Task UploadImage(string imagePath, IFormFile? file)
-    {
-        if (!string.IsNullOrEmpty(imagePath))
-        {
-            await imageService.UploadImage(imagePath, file);
-        }
-    }
-
     public async Task DeleteEvent(string eventId, ClaimsPrincipal claims)
     {
         var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
 
         var role = (await userManager.GetRolesAsync(user)).First();
 
-        var eventInstance = await unitOfWork.EventRepository.GetById(eventId) ?? throw new ItemNotFoundException("Event do not exist");
+        var eventInstance = await unitOfWork.EventRepository.GetById(eventId) ?? throw new ItemNotFoundException("Event");
 
         if (role != "Admin" && eventInstance.CreatorId != user.Id)
         {
@@ -94,6 +92,7 @@ internal class EventService : IEventService
     {
         var events = unitOfWork.EventRepository.GetAll();
         var eventsDTOs = MapEvents(events);
+
         return eventsDTOs;
     }
 
@@ -117,61 +116,34 @@ internal class EventService : IEventService
         {
             throw new InvalidDataException("Page must be 1 or greater");
         }
+
         var allEvents = GetAllEvents();
         var evetnsOnPage = Paginate(page, allEvents.AsQueryable());
+
         return evetnsOnPage;
     }
 
     public IEnumerable<GetEventsResponseDTO> GetFilteredEvents(int page, string filterItem, string filterValue)
     {
+        if (page < 1)
+        {
+            throw new InvalidDataException("Page must be 1 or greater");
+        }
+
         var result = CheckFilterItem(filterItem);
 
-        if (result)
+        if (!result)
         {
-            var events = unitOfWork.EventRepository.GetAll();
-
-            var filterBy = GetFilterItem(filterItem, filterValue);
-            var filteredEvents = events.Where(filterBy);
-            var eventsOnPage = Paginate(page, filteredEvents.AsQueryable());
-            return MapEvents(eventsOnPage);
+            throw new InvalidDataException("Invalid filter item name");
         }
 
-        throw new InvalidDataException("Invalid filter item name");
-    }
+        var events = unitOfWork.EventRepository.GetAll();
 
-    private IEnumerable<T> Paginate<T>(int page, IQueryable<T> events)
-    {
-        return events.Skip((page - 1) * EVENTSONPAGE).Take(EVENTSONPAGE);
-    }
+        var filterBy = GetFilterItem(filterItem, filterValue);
+        var filteredEvents = events.Where(filterBy);
+        var eventsOnPage = Paginate(page, filteredEvents.AsQueryable());
 
-    private bool CheckFilterItem(string filterItem)
-    {
-        switch (filterItem.ToLower())
-        {
-            case "maxmebmers":
-            case "place":
-            case "categoryid":
-            case "creatorid":
-                return true;
-        }
-        return false;
-    }
-
-    private Func<EventDb, bool> GetFilterItem(string filter, string filterValue)
-    {
-        switch (filter.ToLower())
-        {
-            case "place":
-                return ev => ev.Place == filterValue;
-            case "maxmembers":
-                return ev => ev.MaxMembers == int.Parse(filterValue);
-            case "categoryid":
-                return ev => ev.CategoryId == filterValue;
-            case "creatorid":
-                return ev => ev.CreatorId == filterValue;
-
-        }
-        return ev => ev.Place == filterValue;
+        return MapEvents(eventsOnPage);
     }
 
     public async Task<IEnumerable<GetAllUsersResponseDTO>> UpdateEvent(UpdateEventRequestDTO requestDTO, ClaimsPrincipal claims)
@@ -203,26 +175,19 @@ internal class EventService : IEventService
         return await GetAllUsersRegistredOnEvent(requestDTO.Id);
     }
 
-    private EventDb MapUpdateEventRequestDTO(UpdateEventRequestDTO requestDTO, EventDb previousEvent, string imagePath)
+    public async Task<IEnumerable<GetAllUsersResponseDTO>> GetAllUsersRegistredOnEvent(string eventId)
     {
-        previousEvent.Title = requestDTO.Title ?? previousEvent.Title;
-        previousEvent.Describtion = requestDTO.Describtion ?? previousEvent.Describtion;
-        previousEvent.Date = requestDTO.Date ?? previousEvent.Date;
-        previousEvent.Place = requestDTO.Place ?? previousEvent.Place;
-        previousEvent.CategoryId = requestDTO.CategoryId ?? previousEvent.CategoryId;
-        previousEvent.ImageUrl = requestDTO.Image == null ? previousEvent.ImageUrl : imagePath;
+        var eventInstance = await unitOfWork.EventRepository.GetByIdWithRegistrations(eventId) ?? throw new ItemNotFoundException("Event");
 
-        return previousEvent;
+        return eventInstance.Registrations.Select(r => r.Member).Select(u => new GetAllUsersResponseDTO() { Email = u.Email, UserName = u.UserName });
     }
 
-    private IEnumerable<GetEventsResponseDTO> MapEvents(IEnumerable<EventDb> events)
+    private async Task UploadImage(string imagePath, IFormFile? file)
     {
-        List<GetEventsResponseDTO> eventDTOs = [];
-        foreach (var ev in events)
+        if (!string.IsNullOrEmpty(imagePath))
         {
-            eventDTOs.Add(MapEvent(ev));
+            await imageService.UploadImage(imagePath, file);
         }
-        return eventDTOs;
     }
 
     private GetEventsResponseDTO MapEvent(EventDb ev)
@@ -235,10 +200,62 @@ internal class EventService : IEventService
         return eventDTO;
     }
 
-    public async Task<IEnumerable<GetAllUsersResponseDTO>> GetAllUsersRegistredOnEvent(string eventId)
+    private IEnumerable<GetEventsResponseDTO> MapEvents(IEnumerable<EventDb> events)
     {
-        var eventInstance = await unitOfWork.EventRepository.GetByIdWithRegistrations(eventId) ?? throw new ItemNotFoundException("Event");
+        List<GetEventsResponseDTO> eventDTOs = [];
 
-        return eventInstance.Registrations.Select(r => r.Member).Select(u => new GetAllUsersResponseDTO() { Email = u.Email, UserName = u.UserName });
+        foreach (var ev in events)
+        {
+            eventDTOs.Add(MapEvent(ev));
+        }
+
+        return eventDTOs;
+    }
+
+    private EventDb MapUpdateEventRequestDTO(UpdateEventRequestDTO requestDTO, EventDb previousEvent, string imagePath)
+    {
+        previousEvent.Title = requestDTO.Title ?? previousEvent.Title;
+        previousEvent.Describtion = requestDTO.Describtion ?? previousEvent.Describtion;
+        previousEvent.Date = requestDTO.Date ?? previousEvent.Date;
+        previousEvent.Place = requestDTO.Place ?? previousEvent.Place;
+        previousEvent.CategoryId = requestDTO.CategoryId ?? previousEvent.CategoryId;
+        previousEvent.ImageUrl = requestDTO.Image == null ? previousEvent.ImageUrl : imagePath;
+
+        return previousEvent;
+    }
+
+    private Func<EventDb, bool> GetFilterItem(string filter, string filterValue)
+    {
+        switch (filter.ToLower())
+        {
+            case PLACEFILTER:
+                return ev => ev.Place == filterValue;
+            case MAXMEMBERSFILTER:
+                return ev => ev.MaxMembers == int.Parse(filterValue);
+            case CATEGORYIDFILTER:
+                return ev => ev.CategoryId == filterValue;
+            case CREATORIDFILTER:
+                return ev => ev.CreatorId == filterValue;
+
+        }
+        return ev => ev.Place == filterValue;
+    }
+
+    private bool CheckFilterItem(string filterItem)
+    {
+        switch (filterItem.ToLower())
+        {
+            case MAXMEMBERSFILTER:
+            case PLACEFILTER:
+            case CATEGORYIDFILTER:
+            case CREATORIDFILTER:
+                return true;
+        }
+        return false;
+    }
+
+    private IEnumerable<T> Paginate<T>(int page, IQueryable<T> events)
+    {
+        return events.Skip((page - 1) * EVENTSONPAGE).Take(EVENTSONPAGE);
     }
 }

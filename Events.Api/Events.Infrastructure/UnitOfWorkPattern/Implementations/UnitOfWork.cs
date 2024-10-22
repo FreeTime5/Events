@@ -15,7 +15,11 @@ internal class UnitOfWork : IUnitOfWork, IDisposable
     public IMemberRepository MemberRepository { get; }
     public IRegistrationRepository RegistrationRepository { get; }
 
-    public UnitOfWork(IEventRepository eventRepository, ICategoryRepository categoryRepository, IMemberRepository memberRepository, IRegistrationRepository registrationRepository, ApplicationDbContext dbContext)
+    public UnitOfWork(IEventRepository eventRepository,
+        ICategoryRepository categoryRepository,
+        IMemberRepository memberRepository,
+        IRegistrationRepository registrationRepository,
+        ApplicationDbContext dbContext)
     {
         EventRepository = eventRepository;
         CategoryRepository = categoryRepository;

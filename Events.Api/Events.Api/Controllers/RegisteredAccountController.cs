@@ -25,6 +25,7 @@ public class RegisteredAccountController : Controller
     public async Task<IActionResult> Get()
     {
         var user = await accountService.GetUser(User);
+
         return Ok(user.UserName);
     }
 

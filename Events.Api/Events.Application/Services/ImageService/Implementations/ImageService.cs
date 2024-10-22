@@ -16,7 +16,10 @@ internal class ImageService : IImageService
     public async Task DeleteImage(string imagePath)
     {
         if (imagePath == defaultImagePath)
+        {
             return;
+        }
+
         await Task.Run(() => File.Delete(imagePath));
     }
 
@@ -27,10 +30,11 @@ internal class ImageService : IImageService
 
     public string GetImagePath(IFormFile? formFile)
     {
-        if (formFile == null)
+        if (formFile is null)
         {
             return defaultImagePath;
         }
+
         return Path.Combine(imageFolder, Guid.NewGuid().ToString() + "_" + formFile.FileName);
     }
 

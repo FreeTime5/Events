@@ -1,5 +1,4 @@
 ﻿using Events.Application.Models.Event;
-using Events.Infrastructure.Entities;
 using System.Security.Claims;
 
 namespace Events.Application.Services.EventService;

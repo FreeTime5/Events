@@ -17,7 +17,6 @@ internal class CategoryService : ICategoryService
         this.userManager = userManager;
     }
 
-
     public async Task AddCategory(string name, ClaimsPrincipal claims)
     {
         if (string.IsNullOrEmpty(name))
@@ -33,12 +32,15 @@ internal class CategoryService : ICategoryService
         }
 
         var sameCategory = await unitOfWork.CategoryRepository.GetByName(name);
+
         if (sameCategory != null)
         {
             throw new ItemAlreadyAddedException("Category");
         }
 
-        await unitOfWork.CategoryRepository.Add(name);
+        var category = new CategoryDb() { Name = name };
+
+        await unitOfWork.CategoryRepository.Add(category);
     }
 
     public async Task DeleteCategory(string name, ClaimsPrincipal claims)
@@ -55,9 +57,9 @@ internal class CategoryService : ICategoryService
         await unitOfWork.CategoryRepository.Delete(category);
     }
 
-    public async Task<IEnumerable<CategoryDb>> GetAllCategories()
+    public IEnumerable<CategoryDb> GetAllCategories()
     {
-        return await unitOfWork.CategoryRepository.GetAll();
+        return unitOfWork.CategoryRepository.GetAll();
     }
 
     public async Task<CategoryDb> GetCategoryByName(string name)

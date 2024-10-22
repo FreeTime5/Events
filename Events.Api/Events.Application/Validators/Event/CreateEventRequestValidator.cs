@@ -6,6 +6,8 @@ namespace Events.Application.Validators.Event
 {
     internal class CreateEventRequestValidator : AbstractValidator<CreateEventRequestDTO>
     {
+        private const string GUIDREGEX = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$";
+
         public CreateEventRequestValidator()
         {
             RuleFor(requestEvent => requestEvent.Title)
@@ -23,7 +25,7 @@ namespace Events.Application.Validators.Event
                 .NotEmpty();
             RuleFor(requestEvent => requestEvent.CategoryId)
                 .NotEmpty()
-                .Must(c => Regex.IsMatch(c, "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"))
+                .Must(c => Regex.IsMatch(c, GUIDREGEX))
                 .When(requestEvent => requestEvent.CategoryId != null);
             RuleFor(requestEvent => requestEvent.Date)
                 .GreaterThan(DateTime.UtcNow.AddDays(1))

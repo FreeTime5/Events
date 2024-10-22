@@ -46,9 +46,17 @@ namespace Events.Api.Middlewares
             {
                 await HandleExceptionAsync(context, ex.Message, HttpStatusCode.Unauthorized, ex.Message);
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 await HandleExceptionAsync(context, ex.Message, HttpStatusCode.BadRequest, ex.Message);
+            }
+            catch (InvalidDataException ex)
+            {
+                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.BadRequest, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.InternalServerError, ex.Message);
             }
         }
 
@@ -61,11 +69,7 @@ namespace Events.Api.Middlewares
             response.ContentType = "application/json";
             response.StatusCode = (int)statusCode;
 
-            var error = new Error(message);
-
-            var result = error.ToString();
-
-            await response.WriteAsJsonAsync(result);
+            await response.WriteAsJsonAsync(new Error(message).ToString());
         }
 
     }

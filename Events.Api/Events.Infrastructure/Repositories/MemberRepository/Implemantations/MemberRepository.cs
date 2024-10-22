@@ -12,17 +12,6 @@ internal class MemberRepository : IMemberRepository
         this.dbContext = dbContext;
     }
 
-    public async Task AddToEvent(MemberDb member, EventDb eventEntity)
-    {
-        dbContext.Registrations.Add(new RegistrationDb()
-        {
-            Event = eventEntity,
-            Member = member,
-            RegistrationDate = DateTime.UtcNow
-        });
-        await dbContext.SaveChangesAsync();
-    }
-
     public IQueryable<MemberDb> GetAllFromEvent(EventDb eventEntity)
     {
         var members = dbContext.Registrations.Where(r => r.Event.Id == eventEntity.Id)

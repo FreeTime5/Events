@@ -12,9 +12,8 @@ internal class CategoryRepository : ICategoryRepository
         this.dbContext = dbContext;
     }
 
-    public async Task Add(string name)
+    public async Task Add(CategoryDb category)
     {
-        var category = new CategoryDb() { Name = name };
         dbContext.Categories.Add(category);
         await dbContext.SaveChangesAsync();
     }
@@ -25,9 +24,9 @@ internal class CategoryRepository : ICategoryRepository
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<CategoryDb>> GetAll()
+    public IEnumerable<CategoryDb> GetAll()
     {
-        return await dbContext.Categories.ToListAsync();
+        return dbContext.Categories;
     }
 
     public async Task<CategoryDb?> GetById(string id)

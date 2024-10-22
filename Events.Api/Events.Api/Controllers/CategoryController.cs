@@ -22,6 +22,7 @@ namespace Events.Api.Controllers
         public async Task<IActionResult> Add([FromBody] string name)
         {
             await categoryService.AddCategory(name, User);
+
             return Ok();
         }
 
@@ -30,14 +31,15 @@ namespace Events.Api.Controllers
         public async Task<IActionResult> Delete([FromBody] string name)
         {
             await categoryService.DeleteCategory(name, User);
+
             return Ok();
         }
 
         [Route("List")]
         [HttpGet]
-        public async Task<IActionResult> Categories()
+        public IActionResult Categories()
         {
-            var categories = (await categoryService.GetAllCategories())
+            var categories = categoryService.GetAllCategories()
                 .Select(c => c.Name);
 
             return Ok(categories);

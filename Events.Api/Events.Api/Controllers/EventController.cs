@@ -33,6 +33,7 @@ public class EventController : Controller
     public IActionResult Events([FromQuery] int page)
     {
         var events = eventService.GetEventsWithPagination(page);
+
         return Ok(events);
     }
 
@@ -41,6 +42,7 @@ public class EventController : Controller
     public async Task<IActionResult> CreateEvents([FromForm] CreateEventRequestDTO requestDTO)
     {
         await eventService.Create(requestDTO, User);
+
         return Ok();
     }
 
@@ -49,6 +51,7 @@ public class EventController : Controller
     public async Task<IActionResult> DeleteEvent([FromBody] string EventId)
     {
         await eventService.DeleteEvent(EventId, User);
+
         return Ok();
     }
 
@@ -56,13 +59,11 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> UpdateEvent([FromForm] UpdateEventRequestDTO requestDTO)
     {
-        var users = await eventService.UpdateEvent(requestDTO, User);
-        await emailService.SendEmail(users, "Events", "Event was updated");
+        var subsInfo = await eventService.UpdateEvent(requestDTO, User);
+        await emailService.SendEmail(subsInfo, "Events", "Event was updated");
 
         return Ok();
     }
-
-
 
     [Route("Id")]
     [HttpGet]

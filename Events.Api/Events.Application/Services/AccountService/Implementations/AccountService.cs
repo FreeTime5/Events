@@ -74,16 +74,12 @@ namespace Events.Application.Services.AccountService.Implementations
         {
             var loginResponse = new LogInResoponseDTO();
 
-            var user = await userManager.FindByNameAsync(userName);
-
-            if (user == null)
-            {
-                throw new ItemNotFoundException("User");
-            }
+            var user = await userManager.FindByNameAsync(userName) ?? throw new ItemNotFoundException("User");
 
             loginResponse.RefreshToken = user.RefreshToken;
             loginResponse.JwtToken = accessToken;
             loginResponse.IsLogedIn = true;
+
             return loginResponse;
         }
 
@@ -131,77 +127,9 @@ namespace Events.Application.Services.AccountService.Implementations
             return response;
         }
 
-        private async Task<LogInResoponseDTO> GenerateLogInResponse(MemberDb member)
-        {
-            var role = (await userManager.GetRolesAsync(member)).First();
-            var response = new LogInResoponseDTO()
-            {
-                IsLogedIn = true,
-                JwtToken = GenerateTokenString(member.UserName, role),
-                RefreshToken = GenerateRefreshToken()
-            };
-
-            member.RefreshToken = response.RefreshToken;
-            member.RefreshTokenExpiry = DateTime.UtcNow.AddHours(12);
-            await userManager.UpdateAsync(member);
-
-            return response;
-        }
-
-        private ClaimsPrincipal GetTokenPrincipal(string jwtToken)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetSection("Jwt:Key").Value));
-
-            var validation = new TokenValidationParameters()
-            {
-                IssuerSigningKey = securityKey,
-                ValidateLifetime = false,
-                ValidateActor = false,
-                ValidateIssuer = false,
-                ValidateAudience = false
-            };
-
-            return new JwtSecurityTokenHandler().ValidateToken(jwtToken, validation, out _);
-        }
-
-        private string GenerateTokenString(string userName, string role)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.Role, role)
-            };
-
-            var staticKey = configuration.GetSection("Jwt:Key").Value;
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(staticKey));
-            var signingCard = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
-
-            var securityToken = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(15), signingCredentials: signingCard);
-
-            return new JwtSecurityTokenHandler().WriteToken(securityToken);
-
-        }
-
-        private string GenerateRefreshToken()
-        {
-            var randomNumber = new byte[64];
-
-            using (var numberGenerator = RandomNumberGenerator.Create())
-            {
-                numberGenerator.GetBytes(randomNumber);
-            }
-
-            return Convert.ToBase64String(randomNumber);
-        }
-
         public async Task DeleteUser(string userName)
         {
-            var user = await userManager.FindByNameAsync(userName);
-
-            if (user == null)
-            {
-                throw new ItemNotFoundException("User");
-            }
+            var user = await userManager.FindByNameAsync(userName) ?? throw new ItemNotFoundException("User");
 
             await userManager.DeleteAsync(user);
         }
@@ -220,6 +148,68 @@ namespace Events.Application.Services.AccountService.Implementations
                 await userManager.CreateAsync(adminUser, password);
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
+        }
+
+        private ClaimsPrincipal GetTokenPrincipal(string jwtToken)
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetSection("Jwt:Key").Value));
+
+            var validation = new TokenValidationParameters()
+            {
+                IssuerSigningKey = securityKey,
+                ValidateLifetime = false,
+                ValidateActor = false,
+                ValidateIssuer = false,
+                ValidateAudience = false
+            };
+
+            return new JwtSecurityTokenHandler().ValidateToken(jwtToken, validation, out _);
+        }
+
+        private async Task<LogInResoponseDTO> GenerateLogInResponse(MemberDb member)
+        {
+            var role = (await userManager.GetRolesAsync(member)).First();
+            var response = new LogInResoponseDTO()
+            {
+                IsLogedIn = true,
+                JwtToken = GenerateTokenString(member.UserName, role),
+                RefreshToken = GenerateRefreshToken()
+            };
+
+            member.RefreshToken = response.RefreshToken;
+            member.RefreshTokenExpiry = DateTime.UtcNow.AddHours(12);
+            await userManager.UpdateAsync(member);
+
+            return response;
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+
+            using (var numberGenerator = RandomNumberGenerator.Create())
+            {
+                numberGenerator.GetBytes(randomNumber);
+            }
+
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        private string GenerateTokenString(string userName, string role)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, userName),
+                new Claim(ClaimTypes.Role, role)
+            };
+
+            var staticKey = configuration.GetSection("Jwt:Key").Value;
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(staticKey));
+            var signingCard = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature);
+
+            var securityToken = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(15), signingCredentials: signingCard);
+
+            return new JwtSecurityTokenHandler().WriteToken(securityToken);
         }
     }
 }

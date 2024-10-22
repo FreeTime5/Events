@@ -1,6 +1,4 @@
 ﻿using Events.Api.Filters;
-using Events.Application.Models.Member;
-using Events.Application.Services.Account;
 using Events.Application.Services.MemberService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +22,7 @@ public class RegistrationController : Controller
     public async Task<IActionResult> RegisterOnEvent([FromBody] string eventId)
     {
         await memberService.AddMemberToEvent(eventId, User);
+
         return Ok();
     }
 
@@ -32,6 +31,7 @@ public class RegistrationController : Controller
     public async Task<IActionResult> LeaveTheEvent([FromBody] string eventId)
     {
         await memberService.DeleteMemberFromEvent(eventId, User);
+
         return Ok();
     }
 
@@ -44,6 +44,4 @@ public class RegistrationController : Controller
 
         return Ok(members);
     }
-
-    
 }

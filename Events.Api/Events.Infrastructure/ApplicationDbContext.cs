@@ -103,15 +103,12 @@ public class ApplicationDbContext : IdentityDbContext<MemberDb>
             entity.Property(r => r.RegistrationDate)
                 .IsRequired();
         });
-
-
     }
 
     public override int SaveChanges()
     {
         return base.SaveChanges();
     }
-
 }
 
 internal class GuidValueGenerator : ValueGenerator<string>

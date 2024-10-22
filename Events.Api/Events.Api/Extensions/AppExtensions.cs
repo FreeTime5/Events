@@ -73,6 +73,7 @@ public static class AppExtensions
     {
         var imageFolder = Path.Combine(builder.Environment.ContentRootPath, "wwwroot\\EventImages");
         builder.Services.AddImageService(Path.Combine(imageFolder, "default_image.jpg"), imageFolder);
+
         return builder.Services;
     }
 
@@ -95,6 +96,7 @@ public static class AppExtensions
                 OnMessageReceived = context =>
                 {
                     context.Token = context.Request.Cookies["Authorization"];
+
                     return Task.CompletedTask;
                 }
             };
@@ -153,6 +155,7 @@ public static class AppExtensions
         var serverHost = configuration.GetValue<string>("EmailInformation:ServerHost");
 
         services.AddTransient<IEmailService, EmailService>(provider => new EmailService(email, password, serverHost));
+
         return services;
     }
 
@@ -163,6 +166,7 @@ public static class AppExtensions
             var services = scope.ServiceProvider;
 
             var context = services.GetRequiredService<ApplicationDbContext>();
+
             if (context.Database.GetPendingMigrations().Any())
             {
                 context.Database.Migrate();

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-
 namespace Events.Application.Models.Event;
 
 public class CreateEventRequestDTO

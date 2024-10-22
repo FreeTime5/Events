@@ -9,7 +9,7 @@ public interface ICategoryService
 
     Task DeleteCategory(string name, ClaimsPrincipal claims);
 
-    Task<IEnumerable<CategoryDb>> GetAllCategories();
+    IEnumerable<CategoryDb> GetAllCategories();
 
     Task<CategoryDb> GetCategoryById(string id);
 
