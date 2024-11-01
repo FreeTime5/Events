@@ -6,6 +6,7 @@ COPY Events.Api/*.csproj ./Events.Api/
 COPY Events.Infrastructure/*.csproj ./Events.Infrastructure/
 COPY Events.Application/*.csproj ./Events.Application/
 COPY Events.Domain/*.csproj ./Events.Domain/
+COPY Events.DataAccess/*.csproj ./Events.DataAccess/
 COPY Events.Tests/*.csproj ./Events.Tests/
 RUN dotnet restore
 

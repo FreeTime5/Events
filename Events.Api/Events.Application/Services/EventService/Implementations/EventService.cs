@@ -2,16 +2,18 @@
 using Events.Application.Exceptions;
 using Events.Application.Models.Event;
 using Events.Application.Services.ImageService;
-using Events.Infrastructure.Entities;
-using Events.Infrastructure.UnitOfWorkPattern;
+using Events.Domain.Entities;
+using Events.Infrastructure.Services.EmailService;
+using Events.Infrastructure.UnitOfWork;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Events.Application.Services.EventService.Implementations;
 
-internal class EventService : IEventService
+internal class EventService : Service, IEventService
 {
     private const string PLACEFILTER = "place";
     private const string MAXMEMBERSFILTER = "maxmembers";
@@ -19,22 +21,24 @@ internal class EventService : IEventService
     private const string CREATORIDFILTER = "creatorid";
     private const int EVENTSONPAGE = 8;
 
-    private readonly IUnitOfWork unitOfWork;
     private readonly IImageService imageService;
-    private readonly UserManager<MemberDb> userManager;
+    private readonly IEmailService emailSender;
+    private readonly UserManager<Member> userManager;
     private readonly IMapper mapper;
     private readonly IValidator<CreateEventRequestDTO> createEventValidator;
     private readonly IValidator<UpdateEventRequestDTO> updateValidator;
 
     public EventService(IUnitOfWork unitOfWork,
         IImageService imageService,
-        UserManager<MemberDb> userManager,
+        IEmailService emailSender,
+        UserManager<Member> userManager,
         IMapper mapper,
         IValidator<CreateEventRequestDTO> createEventValidator,
         IValidator<UpdateEventRequestDTO> updateValidator)
+        :base(unitOfWork)
     {
-        this.unitOfWork = unitOfWork;
         this.imageService = imageService;
+        this.emailSender = emailSender;
         this.userManager = userManager;
         this.mapper = mapper;
         this.createEventValidator = createEventValidator;
@@ -52,7 +56,8 @@ internal class EventService : IEventService
 
         var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
 
-        var sameEvent = await unitOfWork.EventRepository.GetByTitle(eventRequestDTO.Title);
+        var sameEvent = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefault(e => e.Title == eventRequestDTO.Title);
 
         if (sameEvent != null)
         {
@@ -61,12 +66,22 @@ internal class EventService : IEventService
 
         var imagePath = imageService.GetImagePath(eventRequestDTO.Image);
 
-        var eventInstance = mapper.Map<EventDb>(eventRequestDTO);
+        var eventInstance = mapper.Map<Event>(eventRequestDTO);
+
+        if (eventRequestDTO.CategoryName != null) 
+        {
+            var category = await unitOfWork.GetRepository<Category>()
+                .FirstOrDefault(c => c.Name == eventRequestDTO.CategoryName)
+                ?? throw new ItemNotFoundException("Category");
+            eventInstance.CategoryId = category.Id;
+        }
+
         eventInstance.Creator = user;
         eventInstance.ImageUrl = imagePath;
         eventInstance.ImageName = imageService.GetImageName(imagePath);
 
-        await unitOfWork.EventRepository.Add(eventInstance);
+        unitOfWork.GetRepository<Event>().Add(eventInstance);
+        await unitOfWork.SaveChangesAsync();
         await UploadImage(imagePath, eventRequestDTO.Image);
     }
 
@@ -76,7 +91,9 @@ internal class EventService : IEventService
 
         var role = (await userManager.GetRolesAsync(user)).First();
 
-        var eventInstance = await unitOfWork.EventRepository.GetById(eventId) ?? throw new ItemNotFoundException("Event");
+        var eventInstance = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefault(e => e.Id == eventId)
+            ?? throw new ItemNotFoundException("Event");
 
         if (role != "Admin" && eventInstance.CreatorId != user.Id)
         {
@@ -85,12 +102,59 @@ internal class EventService : IEventService
 
         string imagePath = eventInstance!.ImageUrl!;
         await imageService.DeleteImage(imagePath);
-        await unitOfWork.EventRepository.Delete(eventInstance);
+
+        unitOfWork.GetRepository<Event>().Delete(eventInstance);
+        await unitOfWork.SaveChangesAsync();
+    }
+
+    public async Task UpdateEvent(UpdateEventRequestDTO requestDTO, ClaimsPrincipal claims)
+    {
+        var validationResult = await updateValidator.ValidateAsync(requestDTO);
+
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
+
+        var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
+
+        var eventEntity = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefault(e => e.Id == requestDTO.Id)
+            ?? throw new ItemNotFoundException("Event");
+
+        if (!await userManager.IsInRoleAsync(user, "Admin") && user.Id != eventEntity.CreatorId)
+        {
+            throw new UserHaveNoPermissionException();
+        }
+
+        string previousImagePath = eventEntity.ImageUrl;
+
+        var imagePath = imageService.GetImagePath(requestDTO.Image);
+        eventEntity = MapUpdateEventRequestDTO(requestDTO, eventEntity, imagePath);
+
+        if (requestDTO.CategoryName != null)
+        {
+            var category = await unitOfWork.GetRepository<Category>()
+                .FirstOrDefault(c => c.Name == requestDTO.CategoryName)
+                ?? throw new ItemNotFoundException("Category");
+            eventEntity.CategoryId = category.Id;
+        }
+
+        unitOfWork.GetRepository<Event>().Update(eventEntity);
+        await unitOfWork.SaveChangesAsync();
+
+        await imageService.UpdateImage(previousImagePath, imagePath, requestDTO.Image);
+
+        var users = await GetAllUsersRegistredOnEvent(eventEntity.Id);
+
+        emailSender.SendEmail(users, "Events", $"The event: {eventEntity.Title} has been updated");
     }
 
     public IEnumerable<GetEventsResponseDTO> GetAllEvents()
     {
-        var events = unitOfWork.EventRepository.GetAll();
+        var events = unitOfWork.GetRepository<Event>()
+            .GetAllAsNoTracking();
+
         var eventsDTOs = MapEvents(events);
 
         return eventsDTOs;
@@ -98,14 +162,18 @@ internal class EventService : IEventService
 
     public async Task<GetEventsResponseDTO> GetEventById(string id)
     {
-        var eventInstance = await unitOfWork.EventRepository.GetById(id) ?? throw new ItemNotFoundException("Event");
+        var eventInstance = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefaultAsNoTracking(e => e.Id == id)
+            ?? throw new ItemNotFoundException("Event");
 
         return MapEvent(eventInstance);
     }
 
-    public async Task<GetEventsResponseDTO> GetEventsByName(string name)
+    public async Task<GetEventsResponseDTO> GetEventsByName(string title)
     {
-        var ev = await unitOfWork.EventRepository.GetByTitle(name) ?? throw new ItemNotFoundException("Event");
+        var ev = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefaultAsNoTracking(e => e.Title == title) 
+            ?? throw new ItemNotFoundException("Event");
 
         return MapEvent(ev);
     }
@@ -137,7 +205,7 @@ internal class EventService : IEventService
             throw new InvalidDataException("Invalid filter item name");
         }
 
-        var events = unitOfWork.EventRepository.GetAll();
+        var events = unitOfWork.GetRepository<Event>().GetAllAsNoTracking();
 
         var filterBy = GetFilterItem(filterItem, filterValue);
         var filteredEvents = events.Where(filterBy);
@@ -146,40 +214,16 @@ internal class EventService : IEventService
         return MapEvents(eventsOnPage);
     }
 
-    public async Task<IEnumerable<GetAllUsersResponseDTO>> UpdateEvent(UpdateEventRequestDTO requestDTO, ClaimsPrincipal claims)
+    public async Task<IEnumerable<Member>> GetAllUsersRegistredOnEvent(string eventId)
     {
-        var validationResult = await updateValidator.ValidateAsync(requestDTO);
+        var eventInstance = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefaultAsNoTracking(e => e.Id == eventId) 
+            ?? throw new ItemNotFoundException("Event");
 
-        if (!validationResult.IsValid)
-        {
-            throw new ValidationException(validationResult.Errors);
-        }
-
-        var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
-
-        var eventEntity = await unitOfWork.EventRepository.GetById(requestDTO.Id) ?? throw new ItemNotFoundException("Event");
-
-        if (!await userManager.IsInRoleAsync(user, "Admin") && user.Id != eventEntity.CreatorId)
-        {
-            throw new UserHaveNoPermissionException();
-        }
-
-        string previousImagePath = eventEntity.ImageUrl;
-
-        var imagePath = imageService.GetImagePath(requestDTO.Image);
-        eventEntity = MapUpdateEventRequestDTO(requestDTO, eventEntity, imagePath);
-
-        await unitOfWork.EventRepository.Update(eventEntity);
-        await imageService.UpdateImage(previousImagePath, imagePath, requestDTO.Image);
-
-        return await GetAllUsersRegistredOnEvent(requestDTO.Id);
-    }
-
-    public async Task<IEnumerable<GetAllUsersResponseDTO>> GetAllUsersRegistredOnEvent(string eventId)
-    {
-        var eventInstance = await unitOfWork.EventRepository.GetByIdWithRegistrations(eventId) ?? throw new ItemNotFoundException("Event");
-
-        return eventInstance.Registrations.Select(r => r.Member).Select(u => new GetAllUsersResponseDTO() { Email = u.Email, UserName = u.UserName });
+        return await unitOfWork.GetRepository<Registration>()
+            .FindByAsNoTracking(r => r.EventId == eventId)
+            .Select(r => r.Member)
+            .ToListAsync();
     }
 
     private async Task UploadImage(string imagePath, IFormFile? file)
@@ -190,41 +234,33 @@ internal class EventService : IEventService
         }
     }
 
-    private GetEventsResponseDTO MapEvent(EventDb ev)
+    private GetEventsResponseDTO MapEvent(Event ev)
     {
         GetEventsResponseDTO eventDTO = mapper.Map<GetEventsResponseDTO>(ev);
 
-        eventDTO.CreatorName = ev.Creator != null ? ev.Creator.UserName : null;
-        eventDTO.CategoryName = ev.Category != null ? ev.Category.Name : null;
+        eventDTO.CreatorName = ev.Creator?.UserName;
+        eventDTO.CategoryName = ev.Category?.Name;
 
         return eventDTO;
     }
 
-    private IEnumerable<GetEventsResponseDTO> MapEvents(IEnumerable<EventDb> events)
+    private IEnumerable<GetEventsResponseDTO> MapEvents(IQueryable<Event> events)
     {
-        List<GetEventsResponseDTO> eventDTOs = [];
-
-        foreach (var ev in events)
-        {
-            eventDTOs.Add(MapEvent(ev));
-        }
-
-        return eventDTOs;
+        return events.Select(MapEvent);
     }
 
-    private EventDb MapUpdateEventRequestDTO(UpdateEventRequestDTO requestDTO, EventDb previousEvent, string imagePath)
+    private Event MapUpdateEventRequestDTO(UpdateEventRequestDTO requestDTO, Event previousEvent, string imagePath)
     {
         previousEvent.Title = requestDTO.Title ?? previousEvent.Title;
         previousEvent.Describtion = requestDTO.Describtion ?? previousEvent.Describtion;
         previousEvent.Date = requestDTO.Date ?? previousEvent.Date;
         previousEvent.Place = requestDTO.Place ?? previousEvent.Place;
-        previousEvent.CategoryId = requestDTO.CategoryId ?? previousEvent.CategoryId;
         previousEvent.ImageUrl = requestDTO.Image == null ? previousEvent.ImageUrl : imagePath;
 
         return previousEvent;
     }
 
-    private Func<EventDb, bool> GetFilterItem(string filter, string filterValue)
+    private Func<Event, bool> GetFilterItem(string filter, string filterValue)
     {
         switch (filter.ToLower())
         {
@@ -254,7 +290,7 @@ internal class EventService : IEventService
         return false;
     }
 
-    private IEnumerable<T> Paginate<T>(int page, IQueryable<T> events)
+    private IQueryable<T> Paginate<T>(int page, IQueryable<T> events)
     {
         return events.Skip((page - 1) * EVENTSONPAGE).Take(EVENTSONPAGE);
     }

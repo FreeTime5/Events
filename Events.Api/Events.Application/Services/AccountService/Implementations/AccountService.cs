@@ -1,7 +1,8 @@
 ﻿using Events.Application.Exceptions;
 using Events.Application.Models.Account;
 using Events.Application.Services.Account;
-using Events.Infrastructure.Entities;
+using Events.Domain.Entities;
+using Events.Infrastructure.UnitOfWork;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -13,27 +14,24 @@ using System.Text;
 
 namespace Events.Application.Services.AccountService.Implementations
 {
-    internal class AccountService : IAccountService
+    internal class AccountService : Service, IAccountService
     {
-        private readonly UserManager<MemberDb> userManager;
+        private readonly UserManager<Member> userManager;
         private readonly IValidator<LogInRequestDTO> logInValidator;
         private readonly IValidator<RegisterRequestDTO> registerValidator;
         private readonly IConfiguration configuration;
 
-        public AccountService(UserManager<MemberDb> userManager,
+        public AccountService(UserManager<Member> userManager,
+            IUnitOfWork unitOfWork,
             IValidator<LogInRequestDTO> logInValidator,
             IValidator<RegisterRequestDTO> registerValidator,
             IConfiguration configuration)
+            :base(unitOfWork)
         {
             this.userManager = userManager;
             this.logInValidator = logInValidator;
             this.registerValidator = registerValidator;
             this.configuration = configuration;
-        }
-
-        public async Task<MemberDb?> GetUser(ClaimsPrincipal claims)
-        {
-            return await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
         }
 
         public async Task<LogInResoponseDTO> LogIn(LogInRequestDTO requestDTO)
@@ -108,7 +106,7 @@ namespace Events.Application.Services.AccountService.Implementations
                 throw new ValidationException(validateResult.Errors);
             }
 
-            var user = new MemberDb()
+            var user = new Member()
             {
                 Email = requestDTO.Email,
                 UserName = requestDTO.UserName,
@@ -118,7 +116,7 @@ namespace Events.Application.Services.AccountService.Implementations
 
             if (!result.Succeeded)
             {
-                throw new InvalidOperationException("Can not create user");
+                throw new InvalidOperationException(result.Errors.First().Description);
             }
             await userManager.AddToRoleAsync(user, "User");
 
@@ -140,7 +138,7 @@ namespace Events.Application.Services.AccountService.Implementations
 
             if (admin is null)
             {
-                var adminUser = new MemberDb()
+                var adminUser = new Member()
                 {
                     Email = "admin@gmail.com",
                     UserName = "Admin"
@@ -166,9 +164,10 @@ namespace Events.Application.Services.AccountService.Implementations
             return new JwtSecurityTokenHandler().ValidateToken(jwtToken, validation, out _);
         }
 
-        private async Task<LogInResoponseDTO> GenerateLogInResponse(MemberDb member)
+        private async Task<LogInResoponseDTO> GenerateLogInResponse(Member member)
         {
             var role = (await userManager.GetRolesAsync(member)).First();
+
             var response = new LogInResoponseDTO()
             {
                 IsLogedIn = true,
@@ -178,7 +177,9 @@ namespace Events.Application.Services.AccountService.Implementations
 
             member.RefreshToken = response.RefreshToken;
             member.RefreshTokenExpiry = DateTime.UtcNow.AddHours(12);
-            await userManager.UpdateAsync(member);
+
+            unitOfWork.GetRepository<Member>().Update(member);
+            await unitOfWork.SaveChangesAsync();
 
             return response;
         }
@@ -210,6 +211,11 @@ namespace Events.Application.Services.AccountService.Implementations
             var securityToken = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(15), signingCredentials: signingCard);
 
             return new JwtSecurityTokenHandler().WriteToken(securityToken);
+        }
+
+        public async Task<Member?> GetUser(ClaimsPrincipal claims)
+        {
+            return await userManager.FindByNameAsync(claims.Identity.Name);
         }
     }
 }

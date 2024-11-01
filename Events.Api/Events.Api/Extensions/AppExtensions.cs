@@ -1,12 +1,10 @@
 ﻿using Events.Api.ApiServices.CookieService;
 using Events.Api.ApiServices.CookieService.Implementations;
-using Events.Api.ApiServices.EmailService;
-using Events.Api.ApiServices.EmailService.Implementations;
 using Events.Api.Middlewares;
 using Events.Application.Extensions;
 using Events.Application.Services.Account;
-using Events.Infrastructure;
-using Events.Infrastructure.Entities;
+using Events.DataAccess;
+using Events.Domain.Entities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -48,25 +46,9 @@ public static class AppExtensions
         }
     }
 
-    public static IServiceCollection AddAppDbContext(this IServiceCollection services, IConfiguration configuration)
+    public static IApplicationBuilder UseAppExceptionHandler(this IApplicationBuilder builder)
     {
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("EventDatabase")));
-
-        return services;
-    }
-
-    public static IServiceCollection AddAppIdentity(this IServiceCollection services)
-    {
-        services.AddIdentity<MemberDb, IdentityRole>(options =>
-        {
-            options.Password.RequiredLength = 6;
-            options.Password.RequireNonAlphanumeric = false;
-        })
-        .AddEntityFrameworkStores<ApplicationDbContext>()
-        .AddDefaultTokenProviders();
-
-        return services;
+        return builder.UseMiddleware<ExceptionHandlingMiddleware>();
     }
 
     public static IServiceCollection AddImager(this WebApplicationBuilder builder)
@@ -75,11 +57,6 @@ public static class AppExtensions
         builder.Services.AddImageService(Path.Combine(imageFolder, "default_image.jpg"), imageFolder);
 
         return builder.Services;
-    }
-
-    public static IApplicationBuilder UseAppExceptionHandler(this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<ExceptionHandlingMiddleware>();
     }
 
     public static IServiceCollection AddAppAuthentication(this WebApplicationBuilder builder)
@@ -148,30 +125,33 @@ public static class AppExtensions
         return services.AddScoped<ICookieService, CookieService>();
     }
 
-    public static IServiceCollection AddEmailService(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddAppIdentity(this IServiceCollection services)
     {
-        var email = configuration.GetValue<string>("EmailInformation:Email");
-        var password = configuration.GetValue<string>("EmailInformation:Password");
-        var serverHost = configuration.GetValue<string>("EmailInformation:ServerHost");
-
-        services.AddTransient<IEmailService, EmailService>(provider => new EmailService(email, password, serverHost));
+        services.AddIdentity<Member, IdentityRole>(options =>
+        {
+            options.Password.RequiredLength = 6;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequireUppercase = false;
+            options.Password.RequireLowercase = false;
+            options.Password.RequireDigit = false;
+        })
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
         return services;
     }
 
     public static void ApplyMigrations(this WebApplication app)
     {
-        using (var scope = app.Services.CreateScope())
+        using var scope = app.Services.CreateScope();
+
+        var services = scope.ServiceProvider;
+
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        if (context.Database.GetPendingMigrations().Any())
         {
-            var services = scope.ServiceProvider;
-
-            var context = services.GetRequiredService<ApplicationDbContext>();
-
-            if (context.Database.GetPendingMigrations().Any())
-            {
-                context.Database.Migrate();
-            }
+            context.Database.Migrate();
         }
-
     }
 }

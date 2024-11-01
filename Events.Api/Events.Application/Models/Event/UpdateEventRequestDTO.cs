@@ -14,7 +14,7 @@ public class UpdateEventRequestDTO
 
     public string? Place { get; set; }
 
-    public string? CategoryId { get; set; }
+    public string? CategoryName { get; set; }
 
     public IFormFile? Image { get; set; }
 }

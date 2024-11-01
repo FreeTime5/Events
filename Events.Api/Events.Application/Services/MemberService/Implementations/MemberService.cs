@@ -1,37 +1,40 @@
 ﻿using AutoMapper;
 using Events.Application.Exceptions;
 using Events.Application.Models.Member;
-using Events.Infrastructure.Entities;
-using Events.Infrastructure.UnitOfWorkPattern;
+using Events.Domain.Entities;
+using Events.Infrastructure.UnitOfWork;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 
 namespace Events.Application.Services.MemberService.Implementations;
 
-internal class MemberService : IMemberService
+internal class MemberService : Service, IMemberService
 {
-    private readonly IUnitOfWork unitOfWork;
-    private readonly UserManager<MemberDb> userManager;
     private readonly IMapper mapper;
     private readonly IValidator<DeleteAndAddMemberRequestDTO> deleteAndAddValidator;
+    private readonly UserManager<Member> userManager;
 
     public MemberService(IUnitOfWork unitOfWork,
-        UserManager<MemberDb> userManager,
         IMapper mapper,
-        IValidator<DeleteAndAddMemberRequestDTO> deleteAndAddValidator)
+        IValidator<DeleteAndAddMemberRequestDTO> deleteAndAddValidator,
+        UserManager<Member> userManager)
+        :base(unitOfWork)
     {
-        this.unitOfWork = unitOfWork;
-        this.userManager = userManager;
         this.mapper = mapper;
         this.deleteAndAddValidator = deleteAndAddValidator;
+        this.userManager = userManager;
     }
 
     public async Task<IEnumerable<GetMemberDTO>> GetMembersOfEvent(string eventId)
     {
-        var eventEntity = await unitOfWork.EventRepository.GetById(eventId) ?? throw new ItemNotFoundException("Event");
+        var eventEntity = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefaultAsNoTracking(e => e.Id == eventId) 
+            ?? throw new ItemNotFoundException("Event");
 
-        var membersOfEvent = unitOfWork.MemberRepository.GetAllFromEvent(eventEntity);
+        var membersOfEvent = unitOfWork.GetRepository<Registration>()
+            .FindByAsNoTracking(r => r.EventId == eventId)
+            .Select(r => r.Member);
 
         var membersDTOs = MapMembers(membersOfEvent);
 
@@ -41,6 +44,7 @@ internal class MemberService : IMemberService
     public async Task DeleteMemberFromEvent(string eventId, ClaimsPrincipal claims)
     {
         var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
+
         var result = deleteAndAddValidator.Validate(new DeleteAndAddMemberRequestDTO() { EventId = eventId, MemberId = user.Id });
 
         if (!result.IsValid)
@@ -48,16 +52,22 @@ internal class MemberService : IMemberService
             throw new ValidationException(result.Errors);
         }
 
-        var registration = await unitOfWork.RegistrationRepository.Find(user.Id, eventId) ?? throw new ItemNotFoundException("Registration");
+        var registration = await unitOfWork.GetRepository<Registration>()
+            .FirstOrDefault(r => r.MemberId == user.Id && r.EventId == eventId) 
+            ?? throw new ItemNotFoundException("Registration");
 
         registration.Event.RemoveRegistation();
 
-        await unitOfWork.RegistrationRepository.Remove(registration);
+        unitOfWork.GetRepository<Registration>().Delete(registration);
+        unitOfWork.GetRepository<Event>().Update(registration.Event);
+        await unitOfWork.SaveChangesAsync();
     }
 
     public async Task AddMemberToEvent(string eventId, ClaimsPrincipal claims)
     {
-        var user = await userManager.FindByNameAsync(claims.Identity.Name) ?? throw new ItemNotFoundException("User");
+        var user = await userManager.FindByNameAsync(claims.Identity.Name) 
+            ?? throw new ItemNotFoundException("User");
+
         var result = deleteAndAddValidator.Validate(new DeleteAndAddMemberRequestDTO() { EventId = eventId, MemberId = user.Id });
 
         if (!result.IsValid)
@@ -65,9 +75,12 @@ internal class MemberService : IMemberService
             throw new ValidationException(result.Errors);
         }
 
-        var eventEntity = await unitOfWork.EventRepository.GetById(eventId) ?? throw new ItemNotFoundException("Event");
+        var eventEntity = await unitOfWork.GetRepository<Event>()
+            .FirstOrDefault(e => e.Id == eventId) 
+            ?? throw new ItemNotFoundException("Event");
 
-        var existedRegistration = await unitOfWork.RegistrationRepository.Find(user.Id, eventEntity.Id);
+        var existedRegistration = await unitOfWork.GetRepository<Registration>()
+                .FirstOrDefault(r => r.MemberId == user.Id && r.EventId == eventId);
 
         if (existedRegistration != null)
         {
@@ -81,25 +94,29 @@ internal class MemberService : IMemberService
             throw new InvalidOperationException("Event has max number of members");
         }
 
-        var registration = new RegistrationDb()
+        var registration = new Registration()
         {
             Member = user,
             Event = eventEntity,
             RegistrationDate = DateTime.UtcNow
         };
-        await unitOfWork.RegistrationRepository.Add(registration);
+
+        unitOfWork.GetRepository<Registration>().Add(registration);
+        unitOfWork.GetRepository<Event>().Update(registration.Event);
+        await unitOfWork.SaveChangesAsync();
     }
 
     public async Task UpdateMemberInformation(UpdateMemberDTO requestDTO, string userName)
     {
-        var user = await unitOfWork.MemberRepository.GetByName(userName) ?? throw new ItemNotFoundException("User");
+        var user = await userManager.FindByNameAsync(userName) ?? throw new ItemNotFoundException("User");
 
         user = UpdateUser(user, requestDTO);
 
-        await unitOfWork.MemberRepository.Update(user);
+        unitOfWork.GetRepository<Member>().Update(user);
+        await unitOfWork.SaveChangesAsync();
     }
 
-    private MemberDb UpdateUser(MemberDb user, UpdateMemberDTO requestDTO)
+    private Member UpdateUser(Member user, UpdateMemberDTO requestDTO)
     {
         user.Birthday = requestDTO.Birthday == default ? user.Birthday : requestDTO.Birthday;
         user.FirstName = requestDTO.FirstName ?? user.FirstName;
@@ -108,12 +125,12 @@ internal class MemberService : IMemberService
         return user;
     }
 
-    private IEnumerable<GetMemberDTO> MapMembers(IEnumerable<MemberDb> users)
+    private IEnumerable<GetMemberDTO> MapMembers(IEnumerable<Member> users)
     {
         return users.Select(MapMember);
     }
 
-    private GetMemberDTO MapMember(MemberDb user)
+    private GetMemberDTO MapMember(Member user)
     {
         var userDTO = mapper.Map<GetMemberDTO>(user);
         return userDTO;
