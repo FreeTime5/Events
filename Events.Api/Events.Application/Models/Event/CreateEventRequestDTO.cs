@@ -12,7 +12,7 @@ public class CreateEventRequestDTO
 
     public string Place { get; set; } = string.Empty;
 
-    public string? CategoryId { get; set; }
+    public string? CategoryName { get; set; }
 
     public int MaxMembers { get; set; }
 

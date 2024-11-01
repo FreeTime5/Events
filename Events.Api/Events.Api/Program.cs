@@ -4,18 +4,13 @@ using Events.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddAppDbContext(builder.Configuration);
-
-builder.Services.AddAppIdentity();
-
-
 builder.AddImager()
     .AddFilters()
     .AddValidators()
-    .AddAppServices()
+    .AddAppIdentity()
+    .AddAppServices(builder.Configuration)
     .AddAppCookieService()
-    .AddAppAthorization()
-    .AddEmailService(builder.Configuration);
+    .AddAppAthorization();
 
 builder.AddAppAuthentication();
 

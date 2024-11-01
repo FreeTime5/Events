@@ -23,10 +23,9 @@ namespace Events.Application.Validators.Event
                 .WithMessage("Event must be at least with 2 members");
             RuleFor(requestEvent => requestEvent.Place)
                 .NotEmpty();
-            RuleFor(requestEvent => requestEvent.CategoryId)
+            RuleFor(requestEvent => requestEvent.CategoryName)
                 .NotEmpty()
-                .Must(c => Regex.IsMatch(c, GUIDREGEX))
-                .When(requestEvent => requestEvent.CategoryId != null);
+                .When(requestEvent => requestEvent.CategoryName != null);
             RuleFor(requestEvent => requestEvent.Date)
                 .GreaterThan(DateTime.UtcNow.AddDays(1))
                 .WithMessage("Event must be at least 1 day later");

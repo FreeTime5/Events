@@ -17,6 +17,7 @@ using Events.Application.Validators.Event;
 using Events.Application.Validators.Member;
 using Events.Infrastructure.Extensions;
 using FluentValidation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 
@@ -24,11 +25,11 @@ namespace Events.Application.Extensions;
 
 public static class ExtensionMethods
 {
-    public static IServiceCollection AddAppServices(this IServiceCollection services)
+    public static IServiceCollection AddAppServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddRepositories();
-        services.AddUnitOfWork();
+        services.AddUnitOfWork(configuration);
 
+        services.AddServices(configuration);
         services.AddScoped<IAccountService, AccountService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IEventService, EventService>();
@@ -54,5 +55,5 @@ public static class ExtensionMethods
         services.AddSingleton<IImageService, ImageService>(provider => new ImageService(defaultImagePath, imageFolder));
 
         return services;
-    }
+    }   
 }

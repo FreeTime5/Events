@@ -22,9 +22,9 @@ internal class UpdateEventRequestValidator : AbstractValidator<UpdateEventReques
         RuleFor(requestEvent => requestEvent.Place)
             .NotEmpty()
             .When(e => e.Place != null);
-        RuleFor(requestEvent => requestEvent.CategoryId)
+        RuleFor(requestEvent => requestEvent.CategoryName)
             .NotEmpty()
-            .When(e => e.CategoryId != null);
+            .When(e => e.CategoryName != null);
         RuleFor(requestEvent => requestEvent.Date)
             .GreaterThan(DateTime.UtcNow.AddDays(1))
             .WithMessage("Event must be at least 1 day later")

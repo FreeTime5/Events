@@ -1,19 +1,18 @@
 ﻿using Events.Application.Exceptions;
-using Events.Infrastructure.Entities;
-using Events.Infrastructure.UnitOfWorkPattern;
+using Events.Domain.Entities;
+using Events.Infrastructure.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 
 namespace Events.Application.Services.CategoryService.Implementations;
 
-internal class CategoryService : ICategoryService
+internal class CategoryService : Service, ICategoryService
 {
-    private readonly IUnitOfWork unitOfWork;
-    private readonly UserManager<MemberDb> userManager;
+    private readonly UserManager<Member> userManager;
 
-    public CategoryService(IUnitOfWork unitOfWork, UserManager<MemberDb> userManager)
+    public CategoryService(IUnitOfWork unitOfWork, UserManager<Member> userManager)
+        :base(unitOfWork)
     {
-        this.unitOfWork = unitOfWork;
         this.userManager = userManager;
     }
 
@@ -31,16 +30,18 @@ internal class CategoryService : ICategoryService
             throw new UserHaveNoPermissionException();
         }
 
-        var sameCategory = await unitOfWork.CategoryRepository.GetByName(name);
+        var sameCategory = await unitOfWork.GetRepository<Category>()
+            .FirstOrDefaultAsNoTracking(c => c.Name == name);
 
         if (sameCategory != null)
         {
             throw new ItemAlreadyAddedException("Category");
         }
 
-        var category = new CategoryDb() { Name = name };
+        var category = new Category() { Name = name };
 
-        await unitOfWork.CategoryRepository.Add(category);
+        unitOfWork.GetRepository<Category>().Add(category);
+        await unitOfWork.SaveChangesAsync();
     }
 
     public async Task DeleteCategory(string name, ClaimsPrincipal claims)
@@ -52,28 +53,35 @@ internal class CategoryService : ICategoryService
             throw new UserHaveNoPermissionException();
         }
 
-        var category = await unitOfWork.CategoryRepository.GetByName(name) ?? throw new ItemNotFoundException("Category");
+        var category = await unitOfWork.GetRepository<Category>()
+            .FirstOrDefault(c => c.Name == name) 
+            ?? throw new ItemNotFoundException("Category");
 
-        await unitOfWork.CategoryRepository.Delete(category);
+        unitOfWork.GetRepository<Category>().Delete(category);
+        await unitOfWork.SaveChangesAsync();
     }
 
-    public IEnumerable<CategoryDb> GetAllCategories()
+    public IQueryable<Category> GetAllCategories()
     {
-        return unitOfWork.CategoryRepository.GetAll();
+        return unitOfWork.GetRepository<Category>().GetAllAsNoTracking();
     }
 
-    public async Task<CategoryDb> GetCategoryByName(string name)
+    public async Task<Category> GetCategoryByName(string name)
     {
         if (string.IsNullOrEmpty(name))
         {
             throw new InvalidDataException("Category name must not be null or empty");
         }
 
-        return await unitOfWork.CategoryRepository.GetByName(name) ?? throw new ItemNotFoundException("Category");
+        return await unitOfWork.GetRepository<Category>()
+            .FirstOrDefaultAsNoTracking(c => c.Name == name)
+            ?? throw new ItemNotFoundException("Category");
     }
 
-    public async Task<CategoryDb> GetCategoryById(string id)
+    public async Task<Category> GetCategoryById(string id)
     {
-        return await unitOfWork.CategoryRepository.GetById(id) ?? throw new ItemNotFoundException("Category");
+        return await unitOfWork.GetRepository<Category>()
+            .FirstOrDefaultAsNoTracking(c => c.Id == id) 
+            ?? throw new ItemNotFoundException("Category");
     }
 }

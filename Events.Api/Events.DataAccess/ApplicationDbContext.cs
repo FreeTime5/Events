@@ -1,16 +1,16 @@
-﻿using Events.Infrastructure.Entities;
+﻿using Events.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
 
-namespace Events.Infrastructure;
+namespace Events.DataAccess;
 
-public class ApplicationDbContext : IdentityDbContext<MemberDb>
+public class ApplicationDbContext : IdentityDbContext<Member>
 {
-    public DbSet<EventDb> Events { get; set; }
-    public DbSet<CategoryDb> Categories { get; set; }
-    public DbSet<RegistrationDb> Registrations { get; set; }
+    public DbSet<Event> Events { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Registration> Registrations { get; set; }
 
     public ApplicationDbContext(DbContextOptions options) : base(options)
     {
@@ -20,7 +20,7 @@ public class ApplicationDbContext : IdentityDbContext<MemberDb>
     {
         base.OnModelCreating(modelBuilder);
 
-        var eventBuilder = modelBuilder.Entity<EventDb>(entity =>
+        var eventBuilder = modelBuilder.Entity<Event>(entity =>
         {
             entity.ToTable("Events");
             entity.HasKey(e => e.Id);
@@ -54,7 +54,7 @@ public class ApplicationDbContext : IdentityDbContext<MemberDb>
                 .HasMaxLength(255);
         });
 
-        var categoriesBuilder = modelBuilder.Entity<CategoryDb>(entity =>
+        var categoriesBuilder = modelBuilder.Entity<Category>(entity =>
         {
             entity.ToTable("Categories");
 
@@ -68,7 +68,7 @@ public class ApplicationDbContext : IdentityDbContext<MemberDb>
                 .HasMaxLength(100);
         });
 
-        modelBuilder.Entity<MemberDb>(entity =>
+        modelBuilder.Entity<Member>(entity =>
         {
             entity.HasKey(u => u.Id);
             entity.HasMany(u => u.Registrations)
@@ -80,7 +80,7 @@ public class ApplicationDbContext : IdentityDbContext<MemberDb>
                 .HasMaxLength(100);
         });
 
-        modelBuilder.Entity<RegistrationDb>(entity =>
+        modelBuilder.Entity<Registration>(entity =>
         {
             entity.ToTable("Registrations");
             entity.HasKey(r => r.Id);

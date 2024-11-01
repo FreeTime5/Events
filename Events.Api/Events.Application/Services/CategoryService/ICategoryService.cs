@@ -1,4 +1,4 @@
-﻿using Events.Infrastructure.Entities;
+﻿using Events.Domain.Entities;
 using System.Security.Claims;
 
 namespace Events.Application.Services.CategoryService;
@@ -9,9 +9,9 @@ public interface ICategoryService
 
     Task DeleteCategory(string name, ClaimsPrincipal claims);
 
-    IEnumerable<CategoryDb> GetAllCategories();
+    IQueryable<Category> GetAllCategories();
 
-    Task<CategoryDb> GetCategoryById(string id);
+    Task<Category> GetCategoryById(string id);
 
-    Task<CategoryDb> GetCategoryByName(string name);
+    Task<Category> GetCategoryByName(string name);
 }
