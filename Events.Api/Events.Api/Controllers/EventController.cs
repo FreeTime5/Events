@@ -1,5 +1,4 @@
-﻿using Events.Api.ApiServices.EmailService;
-using Events.Api.Filters;
+﻿using Events.Api.Filters;
 using Events.Application.Models.Event;
 using Events.Application.Services.EventService;
 using Microsoft.AspNetCore.Authorization;
