@@ -1,5 +1,8 @@
 ﻿using Events.Api.Filters;
-using Events.Application.Services.CategoryService;
+using Events.Application.Services.ClaimsService;
+using Events.Application.UseCases.CategoryUseCases.AddCategoryUseCase;
+using Events.Application.UseCases.CategoryUseCases.DeleteCategoryUseCase;
+using Events.Application.UseCases.CategoryUseCases.GetAllCategoriesUseCase;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,18 +13,29 @@ namespace Events.Api.Controllers
     [Route("[controller]")]
     public class CategoryController : Controller
     {
-        private readonly ICategoryService categoryService;
+        private readonly IAddCategoryUseCase addCategory;
+        private readonly IDeleteCategoryUseCase deleteCategory;
+        private readonly IGetAllCategoriesUseCase getAllCategories;
+        private readonly IClaimsService claimsService;
 
-        public CategoryController(ICategoryService categoryService)
+        public CategoryController(IAddCategoryUseCase addCategory,
+            IDeleteCategoryUseCase deleteCategory,
+            IGetAllCategoriesUseCase getAllCategories,
+            IClaimsService claimsService)
         {
-            this.categoryService = categoryService;
+            this.addCategory = addCategory;
+            this.deleteCategory = deleteCategory;
+            this.getAllCategories = getAllCategories;
+            this.claimsService = claimsService;
         }
 
         [HttpPost]
         [ServiceFilter(typeof(BindingFilter))]
         public async Task<IActionResult> Add([FromBody] string name)
         {
-            await categoryService.AddCategory(name, User);
+            var userName = claimsService.GetName(User);
+
+            await addCategory.Execute(name, userName);
 
             return Ok();
         }
@@ -30,7 +44,9 @@ namespace Events.Api.Controllers
         [ServiceFilter(typeof(BindingFilter))]
         public async Task<IActionResult> Delete([FromBody] string name)
         {
-            await categoryService.DeleteCategory(name, User);
+            var userName = claimsService.GetName(User);
+
+            await deleteCategory.Execute(name, userName);
 
             return Ok();
         }
@@ -39,8 +55,7 @@ namespace Events.Api.Controllers
         [HttpGet]
         public IActionResult Categories()
         {
-            var categories = categoryService.GetAllCategories()
-                .Select(c => c.Name);
+            var categories = getAllCategories.Execute();
 
             return Ok(categories);
         }

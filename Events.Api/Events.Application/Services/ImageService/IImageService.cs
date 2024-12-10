@@ -1,11 +1,12 @@
-﻿namespace Events.Application.Services.ImageService;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Events.Application.Services.ImageService;
 
 public interface IImageService
 {
-    Task UploadImage(string imagePath, IFormFile? formFile);
-
     string GetImagePath(IFormFile? formFile);
+
+    Task UploadImage(string imagePath, IFormFile? formFile);
 
     string GetDefaultImagePath();
 

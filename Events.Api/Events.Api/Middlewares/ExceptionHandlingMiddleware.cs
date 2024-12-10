@@ -56,7 +56,7 @@ namespace Events.Api.Middlewares
             }
             catch (Exception ex)
             {
-                await HandleExceptionAsync(context, ex.Message, HttpStatusCode.InternalServerError, ex.Message);
+                await HandleExceptionAsync(context, ex.GetType().Name + " " + ex.Message, HttpStatusCode.InternalServerError, ex.GetType().Name + " " + ex.Message);
             }
         }
 

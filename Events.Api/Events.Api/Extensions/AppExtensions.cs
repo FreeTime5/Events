@@ -1,10 +1,9 @@
 ﻿using Events.Api.ApiServices.CookieService;
 using Events.Api.ApiServices.CookieService.Implementations;
 using Events.Api.Middlewares;
-using Events.Application.Extensions;
-using Events.Application.Services.Account;
-using Events.DataAccess;
+using Events.Application.UseCases.AccountUseCases.AddAdminUseCase;
 using Events.Domain.Entities;
+using Events.Infrastructure;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -21,8 +20,8 @@ public static class AppExtensions
     {
         using (var scope = app.Services.CreateScope())
         {
-            var accountService = scope.ServiceProvider.GetRequiredService<IAccountService>();
-            await accountService.AddAdmin(app.Configuration.GetValue<string>("Admin:Password"));
+            var addAdminUseCase = scope.ServiceProvider.GetRequiredService<IAddAdminUseCase>();
+            await addAdminUseCase.Execute(app.Configuration.GetValue<string>("Admin:Password"));
         }
     }
 
@@ -54,7 +53,6 @@ public static class AppExtensions
     public static IServiceCollection AddImager(this WebApplicationBuilder builder)
     {
         var imageFolder = Path.Combine(builder.Environment.ContentRootPath, "wwwroot\\EventImages");
-        builder.Services.AddImageService(Path.Combine(imageFolder, "default_image.jpg"), imageFolder);
 
         return builder.Services;
     }

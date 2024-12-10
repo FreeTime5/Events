@@ -1,7 +1,4 @@
 ﻿using Events.Application.Models.Account;
-using Events.Application.Services.Account;
-using Events.Infrastructure.Entities;
-using Events.Infrastructure.UnitOfWork;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
 

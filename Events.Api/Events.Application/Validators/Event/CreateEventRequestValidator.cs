@@ -1,6 +1,5 @@
 ﻿using Events.Application.Models.Event;
 using FluentValidation;
-using System.Text.RegularExpressions;
 
 namespace Events.Application.Validators.Event
 {
@@ -23,9 +22,9 @@ namespace Events.Application.Validators.Event
                 .WithMessage("Event must be at least with 2 members");
             RuleFor(requestEvent => requestEvent.Place)
                 .NotEmpty();
-            RuleFor(requestEvent => requestEvent.CategoryName)
-                .NotEmpty()
-                .When(requestEvent => requestEvent.CategoryName != null);
+            RuleFor(requestEvent => requestEvent.CategoryId)
+                .Matches(GUIDREGEX)
+                .When(requestEvent => requestEvent.CategoryId != null);
             RuleFor(requestEvent => requestEvent.Date)
                 .GreaterThan(DateTime.UtcNow.AddDays(1))
                 .WithMessage("Event must be at least 1 day later");

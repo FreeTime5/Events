@@ -1,16 +1,18 @@
 using Events.Api.Extensions;
 using Events.Api.Filters;
 using Events.Application.Extensions;
+using Events.Infrastructure.Extensions;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddImager()
-    .AddFilters()
-    .AddValidators()
+
+builder.Services.AddFilters()
     .AddAppIdentity()
-    .AddAppServices(builder.Configuration)
+    .AddAppUseCases()
     .AddAppCookieService()
-    .AddAppAthorization();
+    .AddAppAthorization()
+    .AddInfrastructure(builder.Configuration, builder.Environment);
 
 builder.AddAppAuthentication();
 

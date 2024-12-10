@@ -9,7 +9,10 @@ internal class DeleteAndAddMemberRequestValidator : AbstractValidator<DeleteAndA
 
     public DeleteAndAddMemberRequestValidator()
     {
-        RuleFor(r => r.EventId).Matches(guidRegex);
-        RuleFor(r => r.MemberId).Matches(guidRegex);
+        RuleFor(r => r.EventId)
+            .Matches(guidRegex);
+        RuleFor(r => r.MemberName)
+            .NotNull()
+            .NotEmpty();
     }
 }

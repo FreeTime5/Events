@@ -2,7 +2,7 @@
 
 public class DeleteAndAddMemberRequestDTO
 {
-    public string MemberId { get; set; } = string.Empty;
+    public string MemberName { get; set; } = string.Empty;
 
     public string EventId { get; set; } = string.Empty;
 }

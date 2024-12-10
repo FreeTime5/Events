@@ -15,8 +15,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Events.Application", "Events.Application\Events.Application.csproj", "{15131782-0D73-43AC-B172-30FBCC475FE3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Events.Infrastructure", "Events.Infrastructure\Events.Infrastructure.csproj", "{4D310B50-6F01-4FF7-82D2-CC146F40C759}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Events.DataAccess", "Events.DataAccess\Events.DataAccess.csproj", "{B0D74710-31E7-46B7-8AF6-055F3B49BCD8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{15131782-0D73-43AC-B172-30FBCC475FE3} = {15131782-0D73-43AC-B172-30FBCC475FE3}
+		{F11EBED3-1D7A-40D2-8164-18302A874EC4} = {F11EBED3-1D7A-40D2-8164-18302A874EC4}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,10 +46,6 @@ Global
 		{4D310B50-6F01-4FF7-82D2-CC146F40C759}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D310B50-6F01-4FF7-82D2-CC146F40C759}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D310B50-6F01-4FF7-82D2-CC146F40C759}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B0D74710-31E7-46B7-8AF6-055F3B49BCD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B0D74710-31E7-46B7-8AF6-055F3B49BCD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B0D74710-31E7-46B7-8AF6-055F3B49BCD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B0D74710-31E7-46B7-8AF6-055F3B49BCD8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
