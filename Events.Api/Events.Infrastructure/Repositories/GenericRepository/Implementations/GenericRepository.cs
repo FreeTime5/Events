@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 namespace Events.Infrastructure.Repositories.GenericRepository.Implementations;
 
 internal class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class
-{ 
+{
     private readonly DbSet<TEntity> entities;
 
     public GenericRepository(DbContext dbContext)

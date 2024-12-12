@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Events.Domain.Entities;
+﻿namespace Events.Domain.Entities;
 
 public class Registration
 {

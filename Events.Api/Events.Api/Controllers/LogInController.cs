@@ -1,7 +1,11 @@
 ﻿using Events.Api.ApiServices.CookieService;
 using Events.Api.Filters;
 using Events.Application.Models.Account;
-using Events.Application.Services.Account;
+using Events.Application.Services.ClaimsService;
+using Events.Application.UseCases.AccountUseCases.CheckIsLoginUseCase;
+using Events.Application.UseCases.AccountUseCases.LoginUseCase;
+using Events.Application.UseCases.AccountUseCases.LogoutUseCase;
+using Events.Application.UseCases.AccountUseCases.RefreshTokenUseCase;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,32 +15,48 @@ namespace Events.Api.Controllers
     [Route("[controller]")]
     public class LogInController : Controller
     {
-        private readonly IAccountService accountService;
+        private readonly ILogoutUseCase logoutUseCase;
+        private readonly ILoginUseCase loginUseCase;
+        private readonly ICheckIsLoginUseCase checkIsLoginUseCase;
+        private readonly IRefreshTokenUseCase refreshTokenUseCase;
         private readonly ICookieService cookieService;
+        private readonly IClaimsService claimsService;
 
-        public LogInController(IAccountService accountService, ICookieService cookieService)
+        public LogInController(ILogoutUseCase logoutUseCase,
+            ILoginUseCase loginUseCase,
+            ICheckIsLoginUseCase checkIsLoginUseCase,
+            IRefreshTokenUseCase refreshTokenUseCase,
+            ICookieService cookieService,
+            IClaimsService claimsService)
         {
-            this.accountService = accountService;
+            this.logoutUseCase = logoutUseCase;
+            this.loginUseCase = loginUseCase;
+            this.checkIsLoginUseCase = checkIsLoginUseCase;
+            this.refreshTokenUseCase = refreshTokenUseCase;
             this.cookieService = cookieService;
+            this.claimsService = claimsService;
         }
 
-        [Authorize]
+        [Authorize(Policy = "RolePolicy")]
         [HttpGet]
         [Route("[action]")]
         public async Task<IActionResult> LogOut()
         {
-            var response = await accountService.LogOut(User);
+            var userName = claimsService.GetName(User);
+
+            var response = await logoutUseCase.Execute(userName);
             cookieService.DeleteAuthorizationCookies();
 
             return Ok(response);
         }
 
-        [Authorize]
+        [Authorize(Policy = "RolePolicy")]
         [HttpGet]
         public async Task<IActionResult> IsLoginAsync()
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].FirstOrDefault() ?? cookieService.GetAuthorizatoinCookies().JwtToken;
-            var response = await accountService.IsLogIn(accessToken!, User.Identity!.Name!);
+            var userName = claimsService.GetName(User);
+            var response = await checkIsLoginUseCase.Execute(accessToken!, userName);
 
             return Ok(response);
         }
@@ -45,7 +65,7 @@ namespace Events.Api.Controllers
         [ServiceFilter(typeof(BindingFilter))]
         public async Task<IActionResult> Login([FromBody] LogInRequestDTO requestDTO)
         {
-            var loginResult = await accountService.LogIn(requestDTO);
+            var loginResult = await loginUseCase.Execute(requestDTO);
             cookieService.SetAuthorizationCookies(loginResult);
 
             return Ok(loginResult);
@@ -57,7 +77,7 @@ namespace Events.Api.Controllers
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO requestDTO)
         {
             requestDTO = cookieService.GetAuthorizatoinCookies() ?? requestDTO;
-            var loginResult = await accountService.RefreshToken(requestDTO);
+            var loginResult = await refreshTokenUseCase.Execute(requestDTO);
             cookieService.SetAuthorizationCookies(loginResult);
 
             return Ok(loginResult);

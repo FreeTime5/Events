@@ -1,16 +1,18 @@
+using Events.Api.Authorization.Extension;
 using Events.Api.Extensions;
 using Events.Api.Filters;
 using Events.Application.Extensions;
+using Events.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddImager()
-    .AddFilters()
-    .AddValidators()
+
+builder.Services.AddFilters()
     .AddAppIdentity()
-    .AddAppServices(builder.Configuration)
+    .AddAppUseCases()
     .AddAppCookieService()
-    .AddAppAthorization();
+    .AddAppAthorization()
+    .AddInfrastructure(builder.Configuration, builder.Environment);
 
 builder.AddAppAuthentication();
 

@@ -6,5 +6,5 @@ public class LogInResoponseDTO
 
     public string JwtToken { get; set; }
 
-    public string RefreshToken { get; internal set; }
+    public string RefreshToken { get; set; }
 }

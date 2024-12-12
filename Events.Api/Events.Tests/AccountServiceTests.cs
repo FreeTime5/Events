@@ -1,5 +1,4 @@
 using Events.Application.Models.Account;
-using Events.Application.Services.Account;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
 

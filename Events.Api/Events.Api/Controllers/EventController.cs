@@ -1,6 +1,13 @@
 ﻿using Events.Api.Filters;
 using Events.Application.Models.Event;
-using Events.Application.Services.EventService;
+using Events.Application.Services.ClaimsService;
+using Events.Application.UseCases.EventUseCases.CreateEventUseCase;
+using Events.Application.UseCases.EventUseCases.DeleteEventUseCase;
+using Events.Application.UseCases.EventUseCases.GetEventByIdUseCase;
+using Events.Application.UseCases.EventUseCases.GetEventByNameUseCase;
+using Events.Application.UseCases.EventUseCases.GetEventsWithPaginationUseCase;
+using Events.Application.UseCases.EventUseCases.GetFilteredEventsUseCase;
+using Events.Application.UseCases.EventUseCases.UpdateEventUseCase;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,12 +18,32 @@ namespace Events.Api.Controllers;
 [Route("[controller]")]
 public class EventController : Controller
 {
-    private readonly IEventService eventService;
+    private readonly ICreateEventUseCase createEventUseCase;
+    private readonly IDeleteEventUseCase deleteEventUseCase;
+    private readonly IUpdateEventUseCase updateEventUseCase;
+    private readonly IGetEventByIdUseCase getEventByIdUseCase;
+    private readonly IGetEventByNameUseCase getEventByNameUseCase;
+    private readonly IGetEventsWithPaginationUseCase getEventsWithPaginationUseCase;
+    private readonly IGetFilteredEventsUseCase getFilteredEventsUseCase;
+    private readonly IClaimsService claimsService;
 
-
-    public EventController(IEventService eventService)
+    public EventController(ICreateEventUseCase createEventUseCase,
+        IDeleteEventUseCase deleteEventUseCase,
+        IUpdateEventUseCase updateEventUseCase,
+        IGetEventByIdUseCase getEventByIdUseCase,
+        IGetEventByNameUseCase getEventByNameUseCase,
+        IGetEventsWithPaginationUseCase getEventsWithPaginationUseCase,
+        IGetFilteredEventsUseCase getFilteredEventsUseCase,
+        IClaimsService claimsService)
     {
-        this.eventService = eventService;
+        this.createEventUseCase = createEventUseCase;
+        this.deleteEventUseCase = deleteEventUseCase;
+        this.updateEventUseCase = updateEventUseCase;
+        this.getEventByIdUseCase = getEventByIdUseCase;
+        this.getEventByNameUseCase = getEventByNameUseCase;
+        this.getEventsWithPaginationUseCase = getEventsWithPaginationUseCase;
+        this.getFilteredEventsUseCase = getFilteredEventsUseCase;
+        this.claimsService = claimsService;
     }
 
     [Route("List")]
@@ -24,7 +51,7 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public IActionResult Events([FromQuery] int page)
     {
-        var events = eventService.GetEventsWithPagination(page);
+        var events = getEventsWithPaginationUseCase.Execute(page);
 
         return Ok(events);
     }
@@ -33,7 +60,9 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> CreateEvents([FromForm] CreateEventRequestDTO requestDTO)
     {
-        await eventService.Create(requestDTO, User);
+        var userName = claimsService.GetName(User);
+
+        await createEventUseCase.Execute(requestDTO, userName);
 
         return Ok();
     }
@@ -42,7 +71,9 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> DeleteEvent([FromBody] string EventId)
     {
-        await eventService.DeleteEvent(EventId, User);
+        var userName = claimsService.GetName(User);
+
+        await deleteEventUseCase.Execute(EventId, userName);
 
         return Ok();
     }
@@ -51,7 +82,9 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> UpdateEvent([FromForm] UpdateEventRequestDTO requestDTO)
     {
-        await eventService.UpdateEvent(requestDTO, User);
+        var userName = claimsService.GetName(User);
+
+        await updateEventUseCase.Execute(requestDTO, userName);
 
         return Ok();
     }
@@ -61,19 +94,19 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public async Task<IActionResult> EventById([FromQuery] string eventId)
     {
-        var ev = await eventService.GetEventById(eventId);
+        var eventEntity = await getEventByIdUseCase.Execute(eventId);
 
-        return Ok(ev);
+        return Ok(eventEntity);
     }
 
     [Route("Title")]
     [HttpGet]
     [ServiceFilter(typeof(BindingFilter))]
-    public async Task<IActionResult> EventByTitle([FromQuery] string title)
+    public async Task<IActionResult> EventByTitle([FromQuery] string name)
     {
-        var ev = await eventService.GetEventsByName(title);
+        var eventEntity = await getEventByNameUseCase.Execute(name);
 
-        return Ok(ev);
+        return Ok(eventEntity);
     }
 
     [Route("Filter")]
@@ -81,7 +114,7 @@ public class EventController : Controller
     [ServiceFilter(typeof(BindingFilter))]
     public IActionResult EventsWithFilter([FromQuery] string filterItem, [FromQuery] string filterValue, [FromQuery] int page)
     {
-        var events = eventService.GetFilteredEvents(page, filterItem, filterValue);
+        var events = getFilteredEventsUseCase.Execute(page, filterItem, filterValue);
 
         return Ok(events);
     }
