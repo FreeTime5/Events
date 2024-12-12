@@ -1,8 +1,8 @@
+using Events.Api.Authorization.Extension;
 using Events.Api.Extensions;
 using Events.Api.Filters;
 using Events.Application.Extensions;
 using Events.Infrastructure.Extensions;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 

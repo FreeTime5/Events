@@ -106,18 +106,6 @@ public static class AppExtensions
         return services;
     }
 
-    public static IServiceCollection AddAppAthorization(this IServiceCollection services)
-    {
-        services.AddAuthorization(options =>
-        {
-            options.DefaultPolicy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme)
-            .RequireAuthenticatedUser()
-            .Build();
-        });
-
-        return services;
-    }
-
     public static IServiceCollection AddAppCookieService(this IServiceCollection services)
     {
         return services.AddScoped<ICookieService, CookieService>();

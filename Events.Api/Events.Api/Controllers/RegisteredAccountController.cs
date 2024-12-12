@@ -29,7 +29,7 @@ public class RegisteredAccountController : Controller
         this.cookieService = cookieService;
     }
 
-    [Authorize]
+    [Authorize(Policy = "RolePolicy")]
     [HttpGet]
     public async Task<IActionResult> Get()
     {

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Events.Api.Controllers;
 
-[Authorize]
+[Authorize(Policy = "RolePolicy")]
 [ApiController]
 [Route("[controller]")]
 public class RegistrationController : Controller

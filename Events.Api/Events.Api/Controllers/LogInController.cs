@@ -37,7 +37,7 @@ namespace Events.Api.Controllers
             this.claimsService = claimsService;
         }
 
-        [Authorize]
+        [Authorize(Policy = "RolePolicy")]
         [HttpGet]
         [Route("[action]")]
         public async Task<IActionResult> LogOut()
@@ -50,7 +50,7 @@ namespace Events.Api.Controllers
             return Ok(response);
         }
 
-        [Authorize]
+        [Authorize(Policy = "RolePolicy")]
         [HttpGet]
         public async Task<IActionResult> IsLoginAsync()
         {
